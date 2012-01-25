@@ -21,7 +21,7 @@ app.use(twilio.middleware() );
 
 ## API Overview
 
-	- [Applications](#applications)
+[Applications](#applications)
 
 ### <a name="applications"></a>Applications
 
