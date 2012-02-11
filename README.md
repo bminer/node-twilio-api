@@ -101,3 +101,8 @@ SmsUrl, or SmsStatusCallback using the appropriate GET/POST methods for each.
  - List valid outgoing phone numbers
  - Create/update/delete applications
  - Support for Twilio Connect Client
+
+## Disclaimer
+
+Blake Miner is not affliated with Twilio, Inc. in any way.
+Use this software AT YOUR OWN RISK. See LICENSE for more details.
