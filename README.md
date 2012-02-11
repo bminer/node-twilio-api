@@ -21,9 +21,16 @@ the next few months.
 
  - Place calls
  - Receive calls
- - Generate TwiML responses without writing any XML
+ - Generate TwiML responses without writing any XML - I am a XML hater.
 
 ## Usage
+
+1. Create a Client using your Account SID and Auth Token.
+2. Select your main account or a subaccount.
+3. Do stuff...
+	- Call API functions against that account (i.e. place a call)
+	- Write logic to generate TwiML when Twilio sends a request to your
+		application (i.e. when an incoming call rings)
 
 ```javascript
 var express = require('express'),
