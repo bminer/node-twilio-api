@@ -1,5 +1,4 @@
 Add voice and SMS messaging capabilities to your Node.JS applications with node-twilio-api!
-Twilio account required. :-/  ...but hey... Twilio is pretty cool, so... be happy.
 
 # node-twilio-api
 
@@ -8,7 +7,7 @@ and generate TwiML.
 
 Also ships with Connect/Express middleware to handle incoming Twilio requests.
 
-You will need a Twilio account to get started. [Click here to sign up for 
+**IMPORTANT**: You will need a Twilio account to get started (it's not free). [Click here to sign up for 
 an account](https://www.twilio.com/try-twilio)
 
 ## Install
