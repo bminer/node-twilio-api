@@ -12,16 +12,49 @@ an account](https://www.twilio.com/try-twilio)
 
 ## Install
 
-This project is in an alpha stage. You cannot install it. You should not even use it!
+This project is in an **alpha** stage. You cannot install it (yet). Use at your own risk!
 
-## Features
+## Features and Library Overview
 
 Only voice calls are supported at this time, but I plan to implement the entire Twilio API over
 the next few months.
 
+ - Manage accounts and subaccounts
+ 	- `Client.getAccount`
+ 	- `Client.createSubAccount`
+ 	- `Client.listAccounts`
+ 	- `Account.load`
+ 	- `Account.save`
+ 	- `Account.closeAccount`
+ 	- `Account.suspendAccount`
+ 	- `Account.activateAccount`
+ - List available local and toll-free numbers
+ 	- `Account.listAvailableLocalNumbers`
+ 	- `Account.listAvailableTollFreeNumbers`
+ - Manage Twilio applications
+ 	- `Account.getApplication`
+ 	- `Account.createApplication`
+ 	- `Account.listApplications`
+ 	- `Application.load`
+ 	- `Application.save`
+ 	- `Application.delete`
+ - List calls and modify live calls
  - Place calls
+ 	- `Application.makeCall`
  - Receive calls
+ 	- `Application` incomingCall Event
  - Generate TwiML responses without writing any XML - I am a XML hater.
+
+## Todo
+
+ - List and manage valid outgoing phone numbers
+ - List and provision incoming phone numbers
+ - Support for Twilio Connect Applications
+ - List and manage conferences, conference details, and participants
+ - Send/receive SMS messages
+	 - List SMS short codes and details
+ - Access recordings, transcriptions, and notifications
+ - Respond to fallback URLs
 
 ## Usage
 
@@ -97,17 +130,6 @@ Triggered when the Twilio
 
 Returns Connect/Express middleware that handles any request to VoiceURL, StatusCallback,
 SmsUrl, or SmsStatusCallback using the appropriate GET/POST methods for each.
-
-## Todo
-
- - Access recordings, transcriptions, and notifications
- - Send/receive SMS messages
- - Respond to fallback URLs
- - Create/get/update/delete account and subaccount information
- - Phone number provisioning
- - List valid outgoing phone numbers
- - Create/update/delete applications
- - Support for Twilio Connect Client
 
 ## Disclaimer
 

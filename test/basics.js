@@ -1,7 +1,7 @@
 var twilio = require('../lib'),
 	credentials,
 	client,
-	Account = require('../lib/Account');
+	Application = require('../lib/Application');
 
 exports.getTwilioCredentials = function(t) {
 	t.expect(2);
@@ -22,8 +22,8 @@ exports.getTwilioCredentials = function(t) {
 				input.pause();
 				process.stdin.pause();
 				credentials = {'AccountSid': accountSid, 'AuthToken': authToken};
-				t.ok(typeof credentials.AccountSid == "string", "Credentials object missing 'AccountSid' property");
-				t.ok(typeof credentials.AuthToken == "string", "Credentials object missing 'AuthToken' property");
+				t.equal(typeof credentials.AccountSid, "string", "Credentials object missing 'AccountSid' property");
+				t.equal(typeof credentials.AuthToken, "string", "Credentials object missing 'AuthToken' property");
 				t.done();
 			});
 		});
@@ -35,64 +35,84 @@ exports.constructClient = function(t) {
 	t.ok(client.AccountSid == credentials.AccountSid, "Account Sid does not match credentials");
 	t.ok(client.account.Sid == credentials.AccountSid, "account.Sid does not match credentials");
 	t.done();
+	return client;
 }
 
-exports.getMainAccountDetails = function(t) {
-	t.expect(6);
-	client.account.load(function(err, account) {
-		t.ifError(err);
-		t.ok(account != null, "Account object is " + account);
-		if(account)
-		{
-			t.ok(account == client.account, "Account Objects do not match");
-			t.ok(account.AuthToken == client.AuthToken, "Account token does not match");
-			t.ok(client.AccountSid == account.Sid, "Account Sid does not match");
-			t.ok(account.Status == 'active', "Account is not active?");
-		}
-		t.done();
-	});
-}
-
-var subAccountName = "Testing 2878373748734872";
-exports.createSubAccount = function(t) {
+exports.listAvailableLocalNumbers = function(t) {
 	t.expect(5);
-	client.createSubAccount(subAccountName, function(err, account) {
+	client.account.listAvailableLocalNumbers('US', {
+		'AreaCode': 614 //Woot! C-bus! Represent, yo!
+	}, function(err, li) {
 		t.ifError(err);
-		t.ok(account != null, "Account object is " + account);
-		if(account)
+		if(li)
 		{
-			t.ok(account != client.account, "Account is the same as main account");
-			t.ok(account.FriendlyName == subAccountName, "Account friendly name does not match");
-			t.ok(account.Status == 'active', "Account is not active?");
+			t.ok(li.AvailablePhoneNumbers instanceof Array, "Not an array");
+			t.ok(li.AvailablePhoneNumbers.length > 0, "Hmm... no numbers in Columbus?");
+			if(li.AvailablePhoneNumbers.length > 0)
+			{
+				t.ok(li.AvailablePhoneNumbers[0].Region == 'OH', "Not in Ohio?");
+				t.ok(li.AvailablePhoneNumbers[0].IsoCountry == 'US', "Not in US?  Say what?");
+				t.done();
+			}
+		}
+	});
+}
+
+exports.listAvailableTollFreeNumbers = function(t) {
+	t.expect(5);
+	client.account.listAvailableTollFreeNumbers('US', {
+		'AreaCode': 866
+	}, function(err, li) {
+		t.ifError(err);
+		if(li)
+		{
+			t.ok(li.AvailablePhoneNumbers instanceof Array, "Not an array");
+			t.ok(li.AvailablePhoneNumbers.length > 0, "Hmm... toll free numbers?");
+			if(li.AvailablePhoneNumbers.length > 0)
+			{
+				t.ok(li.AvailablePhoneNumbers[0].PhoneNumber.substr(0, 5) == '+1866', "Does not match filter");
+				t.ok(li.AvailablePhoneNumbers[0].IsoCountry == 'US', "Not in US?  Say what?");
+			}
 		}
 		t.done();
 	});
 }
 
-var subAccount;
-exports.getSubAccountByFriendlyName = function(t) {
-	t.expect(4);
-	client.listAccounts({'FriendlyName': subAccountName, 'Status': 'active'}, function(err, li) {
+var appName = "Testing 2789278973974982738478";
+exports.createApplicationFail = function(t) {
+	t.expect(1);
+	t.throws(function() {
+		client.account.createApplication(1, 2, 3, 4, 5, function() {}, 6, 7, 8, 9, 10, function() {});
+	});
+	t.done();
+}
+
+/*exports.createApplication = function(t) {
+	t.expect();
+	client.account.createApplication(appName, function(err, app) {
 		t.ifError(err);
-		t.ok(li.Accounts.length == 1, "Multiple sub accounts with testing FriendlyName");
-		t.ok(li.Accounts[0] instanceof Account, "Not an instance of Account class");
-		subAccount = li.Accounts[0];
-		t.ok(subAccount.Status == 'active', "Account is not active?");
+		if(app)
+		{
+			t.ok(app instanceof Application, "Not an Application");
+			t.ok(app.FriendlyName == appName, "FriendlyName does not match");
+			t.ok(app.AccountSid == client.account.Sid, "Account Sid does not match");
+			
+		}
+	});
+}*/
+
+exports.listApplications = function(t) {
+	client.account.listApplications(function(err, li) {
+		t.ifError(err);
+		if(li)
+		{
+			t.ok(li.Applications instanceof Array, "Not an array");
+			t.ok(li.Applications.length > 0, "Hmm... no applications?");
+		}
 		t.done();
 	});
 }
 
-exports.closeSubAccount = function(t) {
-	t.expect(4);
-	if(subAccount)
-		subAccount.closeAccount(function(err) {
-			t.ifError(err);
-			t.ok(subAccount.Status == 'closed', "Account is not closed");
-			subAccount.load(function(err) {
-				t.ifError(err);
-				//Double-check...
-				t.ok(subAccount.Status == 'closed', "Account is not closed");
-				t.done();
-			});
-		});
-}
+/*exports.getApplication = function(t) {
+	
+}*/
