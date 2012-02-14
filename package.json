@@ -10,7 +10,7 @@
   },
   "main": "./lib",
   "scripts": {
-    "test": "nodeunit ./test"
+    "test": "NODE_ENV=development nodeunit ./test"
   },
   "engines": {
     "node": ">=0.4"
