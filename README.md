@@ -12,32 +12,19 @@ an account](https://www.twilio.com/try-twilio)
 
 ## Install
 
-This project is in an **alpha** stage. You cannot install it (yet). Use at your own risk!
+This project is in an **alpha** stage. **Do NOT use in production environments yet! Use at your own risk!**
+
+`npm install twilio-api`
 
 ## Features and Library Overview
 
 Only voice calls are supported at this time, but I plan to implement the entire Twilio API over
 the next few months.
 
- - Manage accounts and subaccounts
- 	- `Client.getAccount`
- 	- `Client.createSubAccount`
- 	- `Client.listAccounts`
- 	- `Account.load`
- 	- `Account.save`
- 	- `Account.closeAccount`
- 	- `Account.suspendAccount`
- 	- `Account.activateAccount`
- - List available local and toll-free numbers
- 	- `Account.listAvailableLocalNumbers`
- 	- `Account.listAvailableTollFreeNumbers`
- - Manage Twilio applications
- 	- `Account.getApplication`
- 	- `Account.createApplication`
- 	- `Account.listApplications`
- 	- `Application.load`
- 	- `Application.save`
- 	- `Application.delete`
+ - [Create Twilio client](#createClient)
+ - [Manage accounts and subaccounts](#manageAccts)
+ - [List available local and toll-free numbers](#listNumbers)
+ - [Manage Twilio applications](#applications)
  - List calls and modify live calls
  - Place calls
  	- `Application.makeCall`
@@ -69,33 +56,74 @@ the next few months.
 var express = require('express'),
     app = express.createServer();
 var twilioAPI = require('twilio-api'),
-	twilio = new twilioAPI.Client(ACCOUNT_SID, AUTH_TOKEN);
-twilio.function(err, twapp) {
-	if(err) throw err;
-	var from = "+15105555555", to = "+16175551212";
-	twapp.makeCall(from, to, {
-		'timeout': 40
-	});
-	app.use(twapp.middleware() );
+	cli = new twilioAPI.Client(ACCOUNT_SID, AUTH_TOKEN);
+//... more sample code coming soon...
+//For now, check the /tests folder
+```
+
+#### <a name="createClient"></a>Create Twilio client
+
+Easy enough...
+
+```javascript
+var twilioAPI = require('twilio-api');
+var cli = new twilioAPI.Client(AccountSid, AuthToken);
+```
+
+#### <a name="middleware"></a>Create Express middleware
+
+Could this be much easier?
+
+```javascript
+var express = require('express'),
+    app = express.createServer();
+var twilioAPI = require('twilio-api'),
+	cli = new twilioAPI.Client(AccountSid, AuthToken);
+//OK... good so far. Now tell twilio-api to intercept incoming HTTP requests.
+app.use(cli.middleware() );
+//OK... now we need to register a Twilio application
+cli.account.getApplication(ApplicationSid, function(err, app) {
+	if(err) throw err; //Maybe do something else with the error instead of throwing?
+	
+	/* The following line tells Twilio to look at the URL path of incoming HTTP requests
+	and pass those requests to the application if it matches the application's VoiceURL/VoiceMethod,
+	SmsURL/SmsMethod, etc. As of right now, you need to create a Twilio application to use the
+	Express middleware. */
+	app.register();
 });
 ```
 
-## API Overview
+#### <a name="manageAccts"></a>Manage accounts and subaccounts
 
- - [Applications](#applications)
- - [OutgoingCallerIds](#outgoing)
- - [IncomingPhoneNumbers](#incoming)
+	- `Client.account`
+		the main Account Object
+	- `Client.getAccount(Sid, cb)` - Get an Account by Sid. The Account Object is passed to the callback `cb(err, account)`
+ 	- `Client.createSubAccount([FriendlyName,] cb)` Create a subaccount, where callback is `cb(err, account)`
+ 	- `Client.listAccounts(cb)` - List accounts and subaccounts, where callback is `cb(err, li)` and `li` is a ListIterator Object.
+ 	- `Account.load([cb])` - Load the Account details from Twilio
+ 	- `Account.save([cb])` - Save the Account details to Twilio
+ 	- `Account.closeAccount([cb])` - Permanently close this account
+ 	- `Account.suspendAccount([cb])` - Suspend this account
+ 	- `Account.activateAccount([cb])` - Re-activate a suspended account
+
+#### <a name="listNumbers"></a>List available local and toll-free numbers
+
+	- `Account.listAvailableLocalNumbers(countryCode, [filters,] cb)` - List available local telephone
+	numbers in your `countryCode` available for provisioning using the provided `filters` Object.
+	See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
+	- `Account.listAvailableTollFreeNumbers(countryCode, [filters,] cb)` - List available toll-free
+	numbers in your `countryCode` available for provision using the provided `filters` Object.
+	See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 
 #### <a name="applications"></a>Applications
 
-### twilio.createApp(...)
-
-Creates an application
-
-### twilio.loadApp([account_sid, auth_token,] app_sid, callback)
-
-Loads an Application instance and returns it to the callback.
-callback is of the form: callback(err, twapp) where twapp is the loaded twilio.Application instance
+	- `Account.getApplication`
+ 	- `Account.createApplication`
+ 	- `Account.listApplications`
+ 	- `Application.load`
+ 	- `Application.save`
+ 	- `Application.delete`
+	- `Application.register`
 
 A valid application must have a VoiceUrl, VoiceMethod, StatusCallback, StatusCallbackMethod,
 SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this time.
