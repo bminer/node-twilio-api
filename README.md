@@ -26,10 +26,8 @@ the next few months.
  - [List available local and toll-free numbers](#listNumbers)
  - [Manage Twilio applications](#applications)
  - List calls and modify live calls
- - Place calls
- 	- `Application.makeCall`
- - Receive calls
- 	- `Application` incomingCall Event
+ - [Place calls](#placingCalls)
+ - [Receive calls](#incomingCallEvent)
  - Generate TwiML responses without writing any XML - I am a XML hater.
 
 ## Todo
@@ -70,6 +68,10 @@ var twilioAPI = require('twilio-api');
 var cli = new twilioAPI.Client(AccountSid, AuthToken);
 ```
 
+## API
+
+The detailed documentation for twilio-api follows.
+
 #### <a name="middleware"></a>Create Express middleware
 
 - `Client.middleware()` - Returns Connect/Express middleware that handles any request for 
@@ -98,13 +100,15 @@ cli.account.getApplication(ApplicationSid, function(err, app) {
 });
 ```
 
+Oh, yes.  The middleware also uses your Twilio AuthToken to validate incoming requests,
+[as described here](http://www.twilio.com/docs/security#validating-requests).
+
 #### <a name="manageAccts"></a>Manage accounts and subaccounts
 
-- `Client.account`
-	the main Account Object
+- `Client.account` - the main Account Object
 - `Client.getAccount(Sid, cb)` - Get an Account by Sid. The Account Object is passed to the callback `cb(err, account)`
 - `Client.createSubAccount([FriendlyName,] cb)` Create a subaccount, where callback is `cb(err, account)`
-- `Client.listAccounts(cb)` - List accounts and subaccounts, where callback is `cb(err, li)` and `li` is a ListIterator Object.
+- `Client.listAccounts([filters,] cb)` - List accounts and subaccounts using the specified `filters`, where callback is `cb(err, li)` and `li` is a ListIterator Object.
 - `Account.load([cb])` - Load the Account details from Twilio
 - `Account.save([cb])` - Save the Account details to Twilio
 - `Account.closeAccount([cb])` - Permanently close this account
@@ -115,19 +119,25 @@ cli.account.getApplication(ApplicationSid, function(err, app) {
 
 - `Account.listAvailableLocalNumbers(countryCode, [filters,] cb)` - List available local telephone
 numbers in your `countryCode` available for provisioning using the provided `filters` Object.
-See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
+See [Twilio's documentation](http://www.twilio.com/docs/api/rest/available-phone-numbers#local)
+for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 - `Account.listAvailableTollFreeNumbers(countryCode, [filters,] cb)` - List available toll-free
 numbers in your `countryCode` available for provision using the provided `filters` Object.
-See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
+See [Twilio's documentation](http://www.twilio.com/docs/api/rest/available-phone-numbers#toll-free)
+for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 
 #### <a name="applications"></a>Applications
 
-- `Account.getApplication`
-- `Account.createApplication`
-- `Account.listApplications`
-- `Application.load`
-- `Application.save`
-- `Application.delete`
+- `Account.getApplication(Sid, cb)` - Get an Application by Sid. The Application Object is passed to the callback `cb(err, app)`
+- `Account.createApplication(voiceURL, voiceMethod, statusCallback, statusCallbackMethod,
+	smsURL, smsMethod, SmsStatusCallback, [friendlyName], cb)` - Creates an Application with `friendlyName`, where callback is `cb(err, app)`
+		The `voiceURL`, `voiceMethod` and other required arguments are used to intercept incoming
+		requests from Twilio using the provided Connect middleware. These URLs should be unique, and
+		you should ensure that they do not interfere with the namespace of your web application.
+- `Account.listApplications([filters,] cb)`
+- `Application.load([cb])`
+- `Application.save([cb])`
+- `Application.remove([cb])` - Permanently deletes this Application from Twilio
 - `Application.register()` - Registers this application to intercept the appropriate HTTP requests
 	using the [Connect/Express middleware](#middleware).
 - `Application.unregister()` - Unregisters this application. This happens automatically if the application
@@ -136,9 +146,9 @@ See Twilio's documentation for what filters you can apply. `cb(err, li)` where `
 A valid application must have a VoiceUrl, VoiceMethod, StatusCallback, StatusCallbackMethod,
 SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this time.
 
-## twilio.Application
+#### <a name="placingCalls"></a>Placing Calls
 
-### twapp.makeCall(from, to, options[, onConnectCallback])
+- app.makeCall(from, to, options[, onConnectCallback])
 
 *from* - The phone number or client identifier to use as the caller id. If using a phone number, it must be a Twilio number or a Verified outgoing caller id for your account
 *to* - The phone number or client identifier to call.
@@ -149,14 +159,12 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 Phone numbers should be formatted with a '+' and country code e.g., +16175551212 (E.164 format).
 
-### outgoingCall Event
+### <a name="appEvents"></a>Application Events
 
-Triggered when Twilio connects an outgoing call placed with `makeCall`. You typically do not need to
-listen for this event; Instead, pass a onConnectCallback to the `makeCall` function.
+- outgoingCall Event - Triggered when Twilio connects an outgoing call placed with `makeCall`. You typically
+do not need to listen for this event; Instead, pass a onConnectCallback to the `makeCall` function.
 
-### incomingCall Event
-
-Triggered when the Twilio...
+- <a name="incomingCallEvent"></a>incomingCall Event - Triggered when the Twilio middleware receives a voice request from Twilio.
 
 ## Disclaimer
 
