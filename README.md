@@ -72,6 +72,11 @@ var cli = new twilioAPI.Client(AccountSid, AuthToken);
 
 #### <a name="middleware"></a>Create Express middleware
 
+- `Client.middleware()` - Returns Connect/Express middleware that handles any request for 
+*registered applications*. A registered application will then handle the request accordingly if
+the method (GET/POST) and URL path of the request matches the application's VoiceURL,
+StatusCallback, SmsUrl, or SmsStatusCallback.
+
 Could this be much easier?
 
 ```javascript
@@ -95,35 +100,38 @@ cli.account.getApplication(ApplicationSid, function(err, app) {
 
 #### <a name="manageAccts"></a>Manage accounts and subaccounts
 
-	- `Client.account`
-		the main Account Object
-	- `Client.getAccount(Sid, cb)` - Get an Account by Sid. The Account Object is passed to the callback `cb(err, account)`
- 	- `Client.createSubAccount([FriendlyName,] cb)` Create a subaccount, where callback is `cb(err, account)`
- 	- `Client.listAccounts(cb)` - List accounts and subaccounts, where callback is `cb(err, li)` and `li` is a ListIterator Object.
- 	- `Account.load([cb])` - Load the Account details from Twilio
- 	- `Account.save([cb])` - Save the Account details to Twilio
- 	- `Account.closeAccount([cb])` - Permanently close this account
- 	- `Account.suspendAccount([cb])` - Suspend this account
- 	- `Account.activateAccount([cb])` - Re-activate a suspended account
+- `Client.account`
+	the main Account Object
+- `Client.getAccount(Sid, cb)` - Get an Account by Sid. The Account Object is passed to the callback `cb(err, account)`
+- `Client.createSubAccount([FriendlyName,] cb)` Create a subaccount, where callback is `cb(err, account)`
+- `Client.listAccounts(cb)` - List accounts and subaccounts, where callback is `cb(err, li)` and `li` is a ListIterator Object.
+- `Account.load([cb])` - Load the Account details from Twilio
+- `Account.save([cb])` - Save the Account details to Twilio
+- `Account.closeAccount([cb])` - Permanently close this account
+- `Account.suspendAccount([cb])` - Suspend this account
+- `Account.activateAccount([cb])` - Re-activate a suspended account
 
 #### <a name="listNumbers"></a>List available local and toll-free numbers
 
-	- `Account.listAvailableLocalNumbers(countryCode, [filters,] cb)` - List available local telephone
-	numbers in your `countryCode` available for provisioning using the provided `filters` Object.
-	See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
-	- `Account.listAvailableTollFreeNumbers(countryCode, [filters,] cb)` - List available toll-free
-	numbers in your `countryCode` available for provision using the provided `filters` Object.
-	See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
+- `Account.listAvailableLocalNumbers(countryCode, [filters,] cb)` - List available local telephone
+numbers in your `countryCode` available for provisioning using the provided `filters` Object.
+See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
+- `Account.listAvailableTollFreeNumbers(countryCode, [filters,] cb)` - List available toll-free
+numbers in your `countryCode` available for provision using the provided `filters` Object.
+See Twilio's documentation for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 
 #### <a name="applications"></a>Applications
 
-	- `Account.getApplication`
- 	- `Account.createApplication`
- 	- `Account.listApplications`
- 	- `Application.load`
- 	- `Application.save`
- 	- `Application.delete`
-	- `Application.register`
+- `Account.getApplication`
+- `Account.createApplication`
+- `Account.listApplications`
+- `Application.load`
+- `Application.save`
+- `Application.delete`
+- `Application.register()` - Registers this application to intercept the appropriate HTTP requests
+	using the [Connect/Express middleware](#middleware).
+- `Application.unregister()` - Unregisters this application. This happens automatically if the application
+	is deleted.
 
 A valid application must have a VoiceUrl, VoiceMethod, StatusCallback, StatusCallbackMethod,
 SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this time.
@@ -141,10 +149,6 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 Phone numbers should be formatted with a '+' and country code e.g., +16175551212 (E.164 format).
 
-### voiceRequest Event
-
-Triggered when Twilio contacts this server and requests a TwiML response. This event will be triggered for incoming and outgoing calls.
-
 ### outgoingCall Event
 
 Triggered when Twilio connects an outgoing call placed with `makeCall`. You typically do not need to
@@ -152,12 +156,7 @@ listen for this event; Instead, pass a onConnectCallback to the `makeCall` funct
 
 ### incomingCall Event
 
-Triggered when the Twilio
-
-### twapp.middleware()
-
-Returns Connect/Express middleware that handles any request to VoiceURL, StatusCallback,
-SmsUrl, or SmsStatusCallback using the appropriate GET/POST methods for each.
+Triggered when the Twilio...
 
 ## Disclaimer
 
