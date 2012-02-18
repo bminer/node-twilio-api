@@ -167,10 +167,14 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 - `app.makeCall(from, to, options[, onConnectCallback])` - Place a call and call the callback once the
 	party answers. **The callbacks will only be called if `app` is a registered application!**
+	
 	`from` is the phone number or client identifier to use as the caller id. If using a phone number,
 		it must be a Twilio number or a verified outgoing caller id for your account.
+
 	`to` is the phone number or client identifier to call.
+
 	`options` is an object containing any of these additional properties:
+	
 		- sendDigits - A string of keys to dial after connecting to the number. Valid digits in the string include: any digit (0-9), '#', '*' and 'w' (to insert a half second pause).
 		- ifMachine - Tell Twilio to try and determine if a machine (like voicemail) or a human has answered the call. Possible values are 'Continue', 'Hangup', and null (the default).
 		- timeout - The integer number of seconds that Twilio should allow the phone to ring before assuming there is no answer. Default is 60 seconds, the maximum is 999 seconds.
