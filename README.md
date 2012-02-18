@@ -41,6 +41,9 @@ the next few months.
 	 - List SMS short codes and details
  - Access recordings, transcriptions, and notifications
  - Respond to fallback URLs
+ - Better scalability with multiple Node instances
+	- An idea for this is to intercept incoming Twilio requests only if the message is for
+	that specific instance. Perhaps use URL namespacing or cookies for this?
 
 ## Usage
 
@@ -56,6 +59,17 @@ var express = require('express'),
     app = express.createServer();
 var twilioAPI = require('twilio-api'),
 	cli = new twilioAPI.Client(ACCOUNT_SID, AUTH_TOKEN);
+app.use(cli.middleware() );
+app.listen(PORT_NUMBER);
+//Get a Twilio application and register it
+cli.account.getApplication(ApplicationSid, function(err, app) {
+	if(err) throw err;
+	app.register();
+	app.on('incomingCall', function(...) {
+		//... functionality coming soon...
+	});
+	app.makeCall(...);
+});
 //... more sample code coming soon...
 //For now, check the /tests folder
 ```
@@ -133,7 +147,8 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 - `Account.createApplication(voiceURL, voiceMethod, statusCallback, statusCallbackMethod,
 	smsURL, smsMethod, SmsStatusCallback, [friendlyName], cb)` - Creates an Application with `friendlyName`, where callback is `cb(err, app)`
 		The `voiceURL`, `voiceMethod` and other required arguments are used to intercept incoming
-		requests from Twilio using the provided Connect middleware. These URLs should be unique, and
+		requests from Twilio using the provided Connect middleware. These URLs should point to the same
+		server instance as the one running, and
 		you should ensure that they do not interfere with the namespace of your web application.
 - `Account.listApplications([filters,] cb)`
 - `Application.load([cb])`
@@ -150,23 +165,26 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 #### <a name="placingCalls"></a>Placing Calls
 
-- app.makeCall(from, to, options[, onConnectCallback])
-
-*from* - The phone number or client identifier to use as the caller id. If using a phone number, it must be a Twilio number or a Verified outgoing caller id for your account
-*to* - The phone number or client identifier to call.
-*options* - An object containing any additional options
-	- sendDigits - A string of keys to dial after connecting to the number. Valid digits in the string include: any digit (0-9), '#', '*' and 'w' (to insert a half second pause).
-	- ifMachine - Tell Twilio to try and determine if a machine (like voicemail) or a human has answered the call. Possible values are 'Continue', 'Hangup', and null (the default).
-	- timeout - The integer number of seconds that Twilio should allow the phone to ring before assuming there is no answer. Default is 60 seconds, the maximum is 999 seconds.
+- `app.makeCall(from, to, options[, onConnectCallback])` - Place a call and call the callback once the
+	party answers. **The callbacks will only be called if `app` is a registered application!**
+	`from` is the phone number or client identifier to use as the caller id. If using a phone number,
+		it must be a Twilio number or a verified outgoing caller id for your account.
+	`to` is the phone number or client identifier to call.
+	`options` is an object containing any of these additional properties:
+		- sendDigits - A string of keys to dial after connecting to the number. Valid digits in the string include: any digit (0-9), '#', '*' and 'w' (to insert a half second pause).
+		- ifMachine - Tell Twilio to try and determine if a machine (like voicemail) or a human has answered the call. Possible values are 'Continue', 'Hangup', and null (the default).
+		- timeout - The integer number of seconds that Twilio should allow the phone to ring before assuming there is no answer. Default is 60 seconds, the maximum is 999 seconds.
 
 Phone numbers should be formatted with a '+' and country code e.g., +16175551212 (E.164 format).
 
 ### <a name="appEvents"></a>Application Events
 
-- outgoingCall Event - Triggered when Twilio connects an outgoing call placed with `makeCall`. You typically
+- `outgoingCall` Event - Triggered when Twilio connects an outgoing call placed with `makeCall`. You typically
 do not need to listen for this event; Instead, pass a onConnectCallback to the `makeCall` function.
 
-- <a name="incomingCallEvent"></a>incomingCall Event - Triggered when the Twilio middleware receives a voice request from Twilio.
+#### Handling incoming calls
+
+- <a name="incomingCallEvent"></a>`incomingCall` Event - Triggered when the Twilio middleware receives a voice request from Twilio.
 
 ### <a name="listIterator"></a>ListIterator
 
@@ -177,13 +195,13 @@ process, any API call that would normally return a list returns a ListIterator O
 
 The ListIterator Object has several properties and methods:
 
-- Page - A property of the ListIterator that tells you which page is loaded at this time
-- NumPages - The number of pages in the resultset
-- PageSize - The number of results per page (this can be changed and the default is 20)
-- Results - The array of results. If results are a list of accounts, this will be an array of Account
+- `Page` - A property of the ListIterator that tells you which page is loaded at this time
+- `NumPages` - The number of pages in the resultset
+- `PageSize` - The number of results per page (this can be changed and the default is 20)
+- `Results` - The array of results. If results are a list of accounts, this will be an array of Account
 	Objects, if it's a list of applications, this will be an array of Application Objects, etc.
-- nextPage([cb]) - Requests that the next page of results be loaded. Callback is of the form `cb(err, li)`
-- prevPage([cb]) - Requests that the previous page of results be loaded.
+- `nextPage([cb])` - Requests that the next page of results be loaded. Callback is of the form `cb(err, li)`
+- `prevPage([cb])` - Requests that the previous page of results be loaded.
 
 ## Testing
 

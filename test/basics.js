@@ -121,11 +121,12 @@ exports.listApplications = function(t) {
 }
 
 exports.getApplication = function(t) {
-	t.expect(3);
+	t.expect(4);
 	client.account.getApplication(createdApp.Sid, function(err, app) {
 		t.ifError(err);
 		t.ok(app instanceof Application, "Not instanceof Application");
 		t.ok(app != createdApp, "Ensure it's a different instance");
+		t.ok(app.FriendlyName == appName, "FriendlyName does not match");
 		t.done();
 	});
 }
@@ -139,12 +140,12 @@ exports.testApplicationRegistration = function(t) {
 	t.equal(client._appMiddlewareSids.length, 1);
 	t.equal(client._appMiddlewareSids[0], app.Sid);
 	t.equal(Object.keys(client._appMiddleware).length, 1);
-	t.equal(client._appMiddleware[app.Sid], app);
+	t.equal(typeof client._appMiddleware[app.Sid], "function");
 	app.register();
 	t.equal(client._appMiddlewareSids.length, 1);
 	t.equal(client._appMiddlewareSids[0], app.Sid);
 	t.equal(Object.keys(client._appMiddleware).length, 1);
-	t.equal(client._appMiddleware[app.Sid], app);
+	t.equal(typeof client._appMiddleware[app.Sid], "function");
 	app.unregister();
 	t.equal(client._appMiddlewareSids.length, 0);
 	t.equal(Object.keys(client._appMiddleware).length, 0);
