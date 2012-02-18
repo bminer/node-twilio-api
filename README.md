@@ -74,6 +74,10 @@ cli.account.getApplication(ApplicationSid, function(err, app) {
 //For now, check the /tests folder
 ```
 
+## API
+
+The detailed documentation for twilio-api follows.
+
 #### <a name="createClient"></a>Create Twilio client
 
 Easy enough...
@@ -83,15 +87,11 @@ var twilioAPI = require('twilio-api');
 var cli = new twilioAPI.Client(AccountSid, AuthToken);
 ```
 
-## API
-
-The detailed documentation for twilio-api follows.
-
 #### <a name="middleware"></a>Create Express middleware
 
 - `Client.middleware()` - Returns Connect/Express middleware that handles any request for 
 *registered applications*. A registered application will then handle the request accordingly if
-the method (GET/POST) and URL path of the request matches the application's VoiceURL,
+the method (GET/POST) and URL path of the request matches the application's VoiceUrl,
 StatusCallback, SmsUrl, or SmsStatusCallback.
 
 Could this be much easier?
@@ -108,7 +108,7 @@ cli.account.getApplication(ApplicationSid, function(err, app) {
 	if(err) throw err; //Maybe do something else with the error instead of throwing?
 	
 	/* The following line tells Twilio to look at the URL path of incoming HTTP requests
-	and pass those requests to the application if it matches the application's VoiceURL/VoiceMethod,
+	and pass those requests to the application if it matches the application's VoiceUrl/VoiceMethod,
 	SmsURL/SmsMethod, etc. As of right now, you need to create a Twilio application to use the
 	Express middleware. */
 	app.register();
@@ -144,9 +144,9 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 #### <a name="applications"></a>Applications
 
 - `Account.getApplication(Sid, cb)` - Get an Application by Sid. The Application Object is passed to the callback `cb(err, app)`
-- `Account.createApplication(voiceURL, voiceMethod, statusCallback, statusCallbackMethod,
+- `Account.createApplication(VoiceUrl, voiceMethod, statusCallback, statusCallbackMethod,
 	smsURL, smsMethod, SmsStatusCallback, [friendlyName], cb)` - Creates an Application with `friendlyName`, where callback is `cb(err, app)`
-		The `voiceURL`, `voiceMethod` and other required arguments are used to intercept incoming
+		The `VoiceUrl`, `voiceMethod` and other required arguments are used to intercept incoming
 		requests from Twilio using the provided Connect middleware. These URLs should point to the same
 		server instance as the one running, and
 		you should ensure that they do not interfere with the namespace of your web application.
@@ -167,6 +167,11 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 - `app.makeCall(from, to, options[, onConnectCallback])` - Place a call and call the callback once the
 	party answers. **The callbacks will only be called if `app` is a registered application!**
+	If your application is registered, but your VoiceUrl is not set to the same server,
+	the callee will receive an error message and a debug error will be logged on your account.
+	For example, if your server is running at www.example.com, please ensure that your VoiceUrl is
+	something like: http://www.example.com/twilio/voice
+	Also, be sure that your VoiceUrl protocol matches your protocol (HTTP vs. HTTPS).
 	
 `from` is the phone number or client identifier to use as the caller id. If using a phone number,
 	it must be a Twilio number or a verified outgoing caller id for your account.
@@ -186,9 +191,9 @@ Phone numbers should be formatted with a '+' and country code e.g., +16175551212
 - `outgoingCall` Event - Triggered when Twilio connects an outgoing call placed with `makeCall`. You typically
 do not need to listen for this event; Instead, pass a onConnectCallback to the `makeCall` function.
 
-#### Handling incoming calls
+#### <a name="incomingCallEvent"></a>Handling incoming calls
 
-- <a name="incomingCallEvent"></a>`incomingCall` Event - Triggered when the Twilio middleware receives a voice request from Twilio.
+- `incomingCall` Event - Triggered when the Twilio middleware receives a voice request from Twilio.
 
 ### <a name="listIterator"></a>ListIterator
 
