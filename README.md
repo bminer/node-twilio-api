@@ -29,6 +29,7 @@ the next few months.
  - [Place calls](#placingCalls)
  - [Receive calls](#incomingCallEvent)
  - Generate TwiML responses without writing any XML - I am a XML hater.
+ - [Built-in pagination with ListIterator Object](#listIterator)
 
 ## Todo
 
@@ -109,11 +110,11 @@ Oh, yes.  The middleware also uses your Twilio AuthToken to validate incoming re
 - `Client.getAccount(Sid, cb)` - Get an Account by Sid. The Account Object is passed to the callback `cb(err, account)`
 - `Client.createSubAccount([FriendlyName,] cb)` Create a subaccount, where callback is `cb(err, account)`
 - `Client.listAccounts([filters,] cb)` - List accounts and subaccounts using the specified `filters`, where callback is `cb(err, li)` and `li` is a ListIterator Object.
-- `Account.load([cb])` - Load the Account details from Twilio
-- `Account.save([cb])` - Save the Account details to Twilio
-- `Account.closeAccount([cb])` - Permanently close this account
-- `Account.suspendAccount([cb])` - Suspend this account
-- `Account.activateAccount([cb])` - Re-activate a suspended account
+- `Account.load([cb])` - Load the Account details from Twilio, where callback is `cb(err, account)`
+- `Account.save([cb])` - Save the Account details to Twilio, where callback is `cb(err, account)`
+- `Account.closeAccount([cb])` - Permanently close this account, where callback is `cb(err, account)`
+- `Account.suspendAccount([cb])` - Suspend this account, where callback is `cb(err, account)`
+- `Account.activateAccount([cb])` - Re-activate a suspended account, where callback is `cb(err, account)`
 
 #### <a name="listNumbers"></a>List available local and toll-free numbers
 
@@ -137,7 +138,8 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 - `Account.listApplications([filters,] cb)`
 - `Application.load([cb])`
 - `Application.save([cb])`
-- `Application.remove([cb])` - Permanently deletes this Application from Twilio
+- `Application.remove([cb])` - Permanently deletes this Application from Twilio, where callback
+	is `cb(err, success)` and `success` is a boolean.
 - `Application.register()` - Registers this application to intercept the appropriate HTTP requests
 	using the [Connect/Express middleware](#middleware).
 - `Application.unregister()` - Unregisters this application. This happens automatically if the application
@@ -165,6 +167,22 @@ Phone numbers should be formatted with a '+' and country code e.g., +16175551212
 do not need to listen for this event; Instead, pass a onConnectCallback to the `makeCall` function.
 
 - <a name="incomingCallEvent"></a>incomingCall Event - Triggered when the Twilio middleware receives a voice request from Twilio.
+
+### <a name="listIterator"></a>ListIterator
+
+A ListIterator Object is returned when Twilio reponses may be large. For example, if one were to list
+all subaccounts, the list might be relatively lengthy.  For these responses, Twilio returns 20 or so
+items in the list and allows us to access the rest of the list with another API call.  To simplify this
+process, any API call that would normally return a list returns a ListIterator Object instead.
+
+The ListIterator Object has several properties and methods:
+- Page - A property of the ListIterator that tells you which page is loaded at this time
+- NumPages - The number of pages in the resultset
+- PageSize - The number of results per page (this can be changed and the default is 20)
+- Results - The array of results. If results are a list of accounts, this will be an array of Account
+	Objects, if it's a list of applications, this will be an array of Application Objects, etc.
+- nextPage([cb]) - Requests that the next page of results be loaded. Callback is of the form `cb(err, li)`
+- prevPage([cb]) - Requests that the previous page of results be loaded.
 
 ## Testing
 

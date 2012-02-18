@@ -87,32 +87,81 @@ exports.createApplicationFail = function(t) {
 	t.done();
 }
 
-/*exports.createApplication = function(t) {
-	t.expect();
-	client.account.createApplication(appName, function(err, app) {
+var createdApp;
+const URL_PREFIX = 'https://www.example.com/twilio/';
+exports.createApplication = function(t) {
+	t.expect(4);
+	client.account.createApplication(URL_PREFIX + 'voice', 'POST', URL_PREFIX + 'voiceStatus', 'POST',
+		URL_PREFIX + 'sms', 'POST', URL_PREFIX + 'smsStatus', appName, function(err, app) {
 		t.ifError(err);
 		if(app)
 		{
 			t.ok(app instanceof Application, "Not an Application");
 			t.ok(app.FriendlyName == appName, "FriendlyName does not match");
 			t.ok(app.AccountSid == client.account.Sid, "Account Sid does not match");
-			
+			createdApp = app;
 		}
+		t.done();
 	});
-}*/
+}
 
 exports.listApplications = function(t) {
+	t.expect(5);
 	client.account.listApplications(function(err, li) {
 		t.ifError(err);
 		if(li)
 		{
 			t.ok(li.Applications instanceof Array, "Not an array");
 			t.ok(li.Applications.length > 0, "Hmm... no applications?");
+			t.ok(li.Results instanceof Array, "Should also have property Results");
+			t.ok(li.Results === li.Applications, "Should be the same Object");
 		}
 		t.done();
 	});
 }
 
-/*exports.getApplication = function(t) {
-	
-}*/
+exports.getApplication = function(t) {
+	t.expect(3);
+	client.account.getApplication(createdApp.Sid, function(err, app) {
+		t.ifError(err);
+		t.ok(app instanceof Application, "Not instanceof Application");
+		t.ok(app != createdApp, "Ensure it's a different instance");
+		t.done();
+	});
+}
+
+exports.testApplicationRegistration = function(t) {
+	t.expect(14);
+	var app = createdApp;
+	t.equal(client._appMiddlewareSids.length, 0);
+	t.equal(Object.keys(client._appMiddleware).length, 0);
+	app.register();
+	t.equal(client._appMiddlewareSids.length, 1);
+	t.equal(client._appMiddlewareSids[0], app.Sid);
+	t.equal(Object.keys(client._appMiddleware).length, 1);
+	t.equal(client._appMiddleware[app.Sid], app);
+	app.register();
+	t.equal(client._appMiddlewareSids.length, 1);
+	t.equal(client._appMiddlewareSids[0], app.Sid);
+	t.equal(Object.keys(client._appMiddleware).length, 1);
+	t.equal(client._appMiddleware[app.Sid], app);
+	app.unregister();
+	t.equal(client._appMiddlewareSids.length, 0);
+	t.equal(Object.keys(client._appMiddleware).length, 0);
+	app.unregister();
+	t.equal(client._appMiddlewareSids.length, 0);
+	t.equal(Object.keys(client._appMiddleware).length, 0);
+	t.done();
+}
+
+exports.removeApplication = function(t) {
+	t.expect(3);
+	createdApp.remove(function(err, success) {
+		t.ifError(err);
+		t.ok(success, "Delete failed");
+		client.account.getApplication(createdApp.Sid, function(err, app) {
+			t.ok(err != null && app == null, "Should be an error");
+			t.done();
+		});
+	});
+}
