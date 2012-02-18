@@ -176,6 +176,7 @@ items in the list and allows us to access the rest of the list with another API 
 process, any API call that would normally return a list returns a ListIterator Object instead.
 
 The ListIterator Object has several properties and methods:
+
 - Page - A property of the ListIterator that tells you which page is loaded at this time
 - NumPages - The number of pages in the resultset
 - PageSize - The number of results per page (this can be changed and the default is 20)
