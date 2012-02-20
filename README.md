@@ -149,8 +149,8 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 
 - `Account.getApplication(Sid, cb)` - Get an Application by Sid. The Application Object is passed to
 	the callback `cb(err, app)`
-- `Account.createApplication(VoiceUrl, voiceMethod, statusCallback, statusCallbackMethod,
-	smsURL, smsMethod, SmsStatusCallback, [friendlyName], cb)` - Creates an Application with
+- `Account.createApplication(voiceUrl, voiceMethod, statusCb, statusCbMethod,
+	smsURL, smsMethod, SmsStatusCb, [friendlyName], cb)` - Creates an Application with
 		`friendlyName`, where callback is `cb(err, app)`
 		The `VoiceUrl`, `voiceMethod` and other required arguments are used to intercept incoming
 		requests from Twilio using the provided Connect middleware. These URLs should point to the same
