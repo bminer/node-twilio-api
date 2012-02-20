@@ -2,7 +2,7 @@
   "author": "Blake Miner <miner.blake@gmail.com> (http://www.blakeminer.com/)",
   "name": "twilio-api",
   "description": "Add voice and SMS messaging capabilities to your Node.JS applications with node-twilio-api - a  high-level Twilio helper library to make Twilio API requests, handle incoming requests, and generate TwiML",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/bminer/node-twilio-api/",
   "repository": {
     "type": "git",
