@@ -321,8 +321,7 @@ Here are all of the TwiML commands you can use:
 - Event: 'outgoingCall' `function(call) {}` - Triggered when Twilio connects an outgoing call
 	placed with `makeCall`.
 
-#### <a name="incomingCallEvent"></a>Handling incoming calls
-
+<a name="incomingCallEvent"></a>
 - Event: 'incomingCall' `function(call) {}` - Triggered when the Twilio middleware receives a
 	voice request from Twilio. Once you have the Call Object, you can [generate a TwiML response]
 	(#generatingTwiML).
