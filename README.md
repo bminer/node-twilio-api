@@ -258,16 +258,27 @@ Here are all of the TwiML commands you can use:
 	file from a URL (`audioURL`) that you provide. Options include:
 	- `loop` - specifies how many times the audio file is played. The default behavior is to play the
 		audio once. Specifying '0' will cause the the <Play> verb to loop until the call is hung up.
- - `Call.pause([duration])
-	- waits silently for a `duration` seconds. If <Pause> is the first verb in a TwiML
+ - `Call.pause([duration])`	- waits silently for a `duration` seconds. If <Pause> is the first verb in a TwiML
 	document, Twilio will wait the specified number of seconds before picking up the call.
  - `Call.gather(cbIfInput, options, cbIfNoInput)` - Gathers input from the telephone user's keypad.
-	Calls `cbIfInput` once the user provides input. If the user does not provide valid input in a timely
+	Calls `cbIfInput` once the user provides input, passing the Call object as the first argument and
+	the input provided as the second argument. If the user does not provide valid input in a timely
 	manner, `cbIfNoInput` is called if it was provided; otherwise, the next TwiML instruction will
 	be executed.  Options include:
-	- `timeout`
-	- `finishOnKey`
-	- `numDigits`
+	- `timeout` - The limit in seconds that Twilio will wait for the caller to press another digit
+		before moving on. Twilio waits until completing the execution of all nested verbs before
+		beginning the timeout period. (default: 5 seconds)
+	- `finishOnKey` - When this key is pressed, Twilio assumes that input gathering is complete. For
+		example, if you set 'finishOnKey' to '#' and the user enters '1234#', Twilio will
+		immediately stop waiting for more input when the '#' is received and will call
+		`cbIfInput`, passing the call Object as the first argument and the string "1234" as the second.
+		The allowed values are the digits 0-9, '#' , '*' and the empty string (set 'finishOnKey' to '').
+		If the empty string is used, <Gather> captures all input and no key will end the <Gather> when
+		pressed. (default: #)
+	- `numDigits` - the number of digits you are expecting, and calls `cbIfInput` once the caller
+		enters that number of digits.
+	The `Call.gather()` function returns a Gather Object with methods: `say()`, `play()`, and `pause()`,
+	allowing you to nest those verbs within the <Gather> verb.
  - `Call.record(...)` - Not yet implemented
  - `Call.sms(...)` - Not yet implemented
  - `Call.dial(...)` - Do not use. Not tested.
