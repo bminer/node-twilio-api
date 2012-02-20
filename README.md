@@ -295,14 +295,14 @@ Here are all of the TwiML commands you can use:
  - `Call.cb(cb)` - When reached, Twilio will use the &lt;Redirect&gt; verb to re-route control to the
 	specified callback function, `cb`. The `cb` will be passed the Call object. This is useful if you
 	want to loop like this:
-	```javascript
-	(function getInput() {
-		call.gather(function(call, digits) {
-			//Input received
-		}).say("Please press 1, 2, or 3.");
-		call.cb(getInput); //Loop until we get input
-	})();
-	```
+```javascript
+(function getInput() {
+	call.gather(function(call, digits) {
+		//Input received
+	}).say("Please press 1, 2, or 3.");
+	call.cb(getInput); //Loop until we get input
+})();
+```
 
 #### <a name="callEvents"></a>Call Events
 
