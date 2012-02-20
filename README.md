@@ -30,7 +30,7 @@ the next few months.
  - List calls and modify live calls
  - [Place calls](#placingCalls)
  - [Receive calls](#incomingCallEvent)
- - Generate TwiML responses without writing any XML - I am a XML hater.
+ - [Generate TwiML responses](#generatingTwiML) without writing any XML (I don't like XML).
  - [Built-in pagination with ListIterator Object](#listIterator)
 
 ## Todo
@@ -199,7 +199,7 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 Phone numbers should be formatted with a '+' and country code e.g., +16175551212 (E.164 format).
 
-#### <a name="callObject"></a>Generating TwiML
+#### <a name="generatingTwiML"></a>Generating TwiML
 
 Generating TwiML is as simple as calling methods on the Call Object.  Let's look at an example of
 placing and handling an outbound call:
@@ -315,7 +315,8 @@ Here are all of the TwiML commands you can use:
 #### <a name="incomingCallEvent"></a>Handling incoming calls
 
 - Event: 'incomingCall' `function(call) {}` - Triggered when the Twilio middleware receives a
-	voice request from Twilio.
+	voice request from Twilio. Once you have the Call Object, you can [generate a TwiML response]
+	(#generatingTwiML).
 
 #### <a name="listIterator"></a>ListIterator
 
