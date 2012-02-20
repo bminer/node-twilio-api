@@ -253,13 +253,13 @@ Here are all of the TwiML commands you can use:
 	- `language` - allows you pick a voice with a specific language's accent and pronunciations.
 		Allowed values: 'en', 'en-gb', 'es', 'fs', 'de' (default: 'en')
 	- `loop` - specifies how many times you'd like the text repeated. The default is once.
-		Specifying '0' will cause the <Say> verb to loop until the call is hung up.
+		Specifying '0' will cause the &lt;Say&gt; verb to loop until the call is hung up.
  - `Call.play(audioURL[, options])` - plays an audio file back to the caller. Twilio retrieves the
 	file from a URL (`audioURL`) that you provide. Options include:
 	- `loop` - specifies how many times the audio file is played. The default behavior is to play the
-		audio once. Specifying '0' will cause the the <Play> verb to loop until the call is hung up.
- - `Call.pause([duration])`	- waits silently for a `duration` seconds. If <Pause> is the first verb in a TwiML
-	document, Twilio will wait the specified number of seconds before picking up the call.
+		audio once. Specifying '0' will cause the the &lt;Play&gt; verb to loop until the call is hung up.
+ - `Call.pause([duration])`	- waits silently for a `duration` seconds. If &lt;Pause&gt; is the first
+	verb in a TwiML document, Twilio will wait the specified number of seconds before picking up the call.
  - `Call.gather(cbIfInput, options, cbIfNoInput)` - Gathers input from the telephone user's keypad.
 	Calls `cbIfInput` once the user provides input, passing the Call object as the first argument and
 	the input provided as the second argument. If the user does not provide valid input in a timely
@@ -273,28 +273,28 @@ Here are all of the TwiML commands you can use:
 		immediately stop waiting for more input when the '#' is received and will call
 		`cbIfInput`, passing the call Object as the first argument and the string "1234" as the second.
 		The allowed values are the digits 0-9, '#' , '*' and the empty string (set 'finishOnKey' to '').
-		If the empty string is used, <Gather> captures all input and no key will end the <Gather> when
-		pressed. (default: #)
+		If the empty string is used, &lt;Gather&gt; captures all input and no key will end the
+		&lt;Gather&gt; when	pressed. (default: #)
 	- `numDigits` - the number of digits you are expecting, and calls `cbIfInput` once the caller
 		enters that number of digits.
 	The `Call.gather()` function returns a Gather Object with methods: `say()`, `play()`, and `pause()`,
-	allowing you to nest those verbs within the <Gather> verb.
+	allowing you to nest those verbs within the &lt;Gather&gt; verb.
  - `Call.record(...)` - Not yet implemented
  - `Call.sms(...)` - Not yet implemented
  - `Call.dial(...)` - Do not use. Not tested.
  - `Call.hangup()` - Ends a call. If used as the first verb in a TwiML response it does not prevent
 	Twilio from answering the call and billing your account.
  - `Call.redirect(url, method)` - Transfers control of a call to the TwiML at a different URL.
-	All verbs after <Redirect> are unreachable and ignored. Twilio will request a new TwiML document
+	All verbs after &lt;Redirect&gt; are unreachable and ignored. Twilio will request a new TwiML document
 	from `url` using the HTTP `method` provided.
  - `Call.reject(reason)` - rejects an incoming call to your Twilio number without billing you. This
-	is very useful for blocking unwanted calls. If the first verb in a TwiML document is <Reject>,
+	is very useful for blocking unwanted calls. If the first verb in a TwiML document is &lt;Reject&gt;,
 	Twilio will not pick up the call. The call ends with a status of 'busy' or 'no-answer',
-	depending on the `reason` provided. Any verbs after <Reject> are unreachable and ignored.
+	depending on the `reason` provided. Any verbs after &lt;Reject&gt; are unreachable and ignored.
 	Possible `reason`s include: 'rejected', 'busy' (default: 'rejected')
- - `Call.cb(cb)` - When reached, Twilio will use the <Redirect> verb to re-route control to the specified
-	callback function, `cb`. The `cb` will be passed the Call object. Note: this is mostly for internal
-	use.
+ - `Call.cb(cb)` - When reached, Twilio will use the &lt;Redirect&gt; verb to re-route control to the
+	specified callback function, `cb`. The `cb` will be passed the Call object. Note: this is mostly
+	for internal use.
 
 #### <a name="callEvents"></a>Call Events
 
