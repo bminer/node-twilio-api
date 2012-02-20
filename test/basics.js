@@ -4,11 +4,12 @@ var twilio = require('../lib'),
 	Application = require('../lib/Application');
 
 exports.getTwilioCredentials = function(t) {
-	t.expect(2);
+	t.expect(3);
 	try {
 		credentials = require('./credentials');
-		t.ok(typeof credentials.AccountSid == "string", "Credentials object missing 'AccountSid' property");
-		t.ok(typeof credentials.AuthToken == "string", "Credentials object missing 'AuthToken' property");
+		t.equal(typeof credentials.AccountSid, "string", "Credentials object missing 'AccountSid' property");
+		t.equal(typeof credentials.AuthToken, "string", "Credentials object missing 'AuthToken' property");
+		t.equal(typeof credentials.ApplicationSid, "string", "Credentials object missing 'ApplicationSid' property");
 		t.done();
 	}
 	catch(e) {
@@ -19,12 +20,16 @@ exports.getTwilioCredentials = function(t) {
 		var input = readline.createInterface(process.stdin, process.stdout, null);
 		input.question("Please enter your Twilio Account Sid: ", function(accountSid) {
 			input.question("Please enter your Twilio Auth Token: ", function(authToken) {
-				input.pause();
-				process.stdin.pause();
-				credentials = {'AccountSid': accountSid, 'AuthToken': authToken};
-				t.equal(typeof credentials.AccountSid, "string", "Credentials object missing 'AccountSid' property");
-				t.equal(typeof credentials.AuthToken, "string", "Credentials object missing 'AuthToken' property");
-				t.done();
+				input.question("Please enter a valid Twilio Application Sid for this account: ",
+					function(appSid) {
+					input.pause();
+					process.stdin.pause();
+					credentials = {'AccountSid': accountSid, 'AuthToken': authToken, 'ApplicationSid': appSid};
+					t.equal(typeof credentials.AccountSid, "string", "Credentials object missing 'AccountSid' property");
+					t.equal(typeof credentials.AuthToken, "string", "Credentials object missing 'AuthToken' property");
+					t.equal(typeof credentials.ApplicationSid, "string", "Credentials object missing 'ApplicationSid' property");
+					t.done();
+				});
 			});
 		});
 	}
@@ -32,6 +37,7 @@ exports.getTwilioCredentials = function(t) {
 exports.constructClient = function(t) {
 	t.expect(2);
 	client = new twilio.Client(credentials.AccountSid, credentials.AuthToken);
+	client.credentials = credentials; //Expose this object for the sake of other tests
 	t.ok(client.AccountSid == credentials.AccountSid, "Account Sid does not match credentials");
 	t.ok(client.account.Sid == credentials.AccountSid, "account.Sid does not match credentials");
 	t.done();

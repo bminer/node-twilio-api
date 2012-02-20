@@ -12,7 +12,9 @@ an account](https://www.twilio.com/try-twilio)
 
 ## Install
 
-This project is in an **alpha** stage. **Do NOT use in production environments yet! Use at your own risk!**
+This project is in an **alpha** stage. Placing and receiving calls should now be working, but these
+features are an their infantcy. **Do NOT use in production environments yet!
+Use at your own risk!**
 
 `npm install twilio-api`
 
@@ -121,9 +123,11 @@ Oh, yes.  The middleware also uses your Twilio AuthToken to validate incoming re
 #### <a name="manageAccts"></a>Manage accounts and subaccounts
 
 - `Client.account` - the main Account Object
-- `Client.getAccount(Sid, cb)` - Get an Account by Sid. The Account Object is passed to the callback `cb(err, account)`
+- `Client.getAccount(Sid, cb)` - Get an Account by Sid. The Account Object is passed to the callback
+	`cb(err, account)`
 - `Client.createSubAccount([FriendlyName,] cb)` Create a subaccount, where callback is `cb(err, account)`
-- `Client.listAccounts([filters,] cb)` - List accounts and subaccounts using the specified `filters`, where callback is `cb(err, li)` and `li` is a ListIterator Object.
+- `Client.listAccounts([filters,] cb)` - List accounts and subaccounts using the specified `filters`,
+	where callback is `cb(err, li)` and `li` is a ListIterator Object.
 - `Account.load([cb])` - Load the Account details from Twilio, where callback is `cb(err, account)`
 - `Account.save([cb])` - Save the Account details to Twilio, where callback is `cb(err, account)`
 - `Account.closeAccount([cb])` - Permanently close this account, where callback is `cb(err, account)`
@@ -143,9 +147,11 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 
 #### <a name="applications"></a>Applications
 
-- `Account.getApplication(Sid, cb)` - Get an Application by Sid. The Application Object is passed to the callback `cb(err, app)`
+- `Account.getApplication(Sid, cb)` - Get an Application by Sid. The Application Object is passed to
+	the callback `cb(err, app)`
 - `Account.createApplication(VoiceUrl, voiceMethod, statusCallback, statusCallbackMethod,
-	smsURL, smsMethod, SmsStatusCallback, [friendlyName], cb)` - Creates an Application with `friendlyName`, where callback is `cb(err, app)`
+	smsURL, smsMethod, SmsStatusCallback, [friendlyName], cb)` - Creates an Application with
+		`friendlyName`, where callback is `cb(err, app)`
 		The `VoiceUrl`, `voiceMethod` and other required arguments are used to intercept incoming
 		requests from Twilio using the provided Connect middleware. These URLs should point to the same
 		server instance as the one running, and
@@ -157,8 +163,8 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 	is `cb(err, success)` and `success` is a boolean.
 - `Application.register()` - Registers this application to intercept the appropriate HTTP requests
 	using the [Connect/Express middleware](#middleware).
-- `Application.unregister()` - Unregisters this application. This happens automatically if the application
-	is deleted.
+- `Application.unregister()` - Unregisters this application. This happens automatically if the
+	application is deleted.
 
 A valid application must have a VoiceUrl, VoiceMethod, StatusCallback, StatusCallbackMethod,
 SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this time.
@@ -180,22 +186,127 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 `options` is an object containing any of these additional properties:
 	
-- sendDigits - A string of keys to dial after connecting to the number. Valid digits in the string include: any digit (0-9), '#', '*' and 'w' (to insert a half second pause).
-- ifMachine - Tell Twilio to try and determine if a machine (like voicemail) or a human has answered the call. Possible values are 'Continue', 'Hangup', and null (the default).
-- timeout - The integer number of seconds that Twilio should allow the phone to ring before assuming there is no answer. Default is 60 seconds, the maximum is 999 seconds.
+- sendDigits - A string of keys to dial after connecting to the number. Valid digits in the string
+	include: any digit (0-9), '#', '*' and 'w' (to insert a half second pause).
+- ifMachine - Tell Twilio to try and determine if a machine (like voicemail) or a human has answered
+	the call. Possible values are 'Continue', 'Hangup', and null (the default).
+- timeout - The integer number of seconds that Twilio should allow the phone to ring before assuming
+	there is no answer. Default is 60 seconds, the maximum is 999 seconds.
+
+`cb` - Callback of the form `cb(err, call)`. This is called as soon as the call is placed.
+	You can being building your TwiML response in the context of this callback, or you can listen for
+	the various events on the Call Object.
 
 Phone numbers should be formatted with a '+' and country code e.g., +16175551212 (E.164 format).
 
-### <a name="appEvents"></a>Application Events
+#### <a name="callObject"></a>Generating TwiML
 
-- `outgoingCall` Event - Triggered when Twilio connects an outgoing call placed with `makeCall`. You typically
-do not need to listen for this event; Instead, pass a onConnectCallback to the `makeCall` function.
+Generating TwiML is as simple as calling methods on the Call Object.  Let's look at an example of
+placing and handling an outbound call:
+
+```javascript
+/* Make sure that you have already setup your Twilio client, loaded an application, and started
+	your server. Twilio must be able to contact your server for this to work. Ensure that your
+	server is running, proper ports are open on your firewall, etc.
+*/
+app.makeCall("+16145555555", "+16145558888", function(err, call) {
+	if(err) throw err;
+	//Now we can use the call Object to generate TwiML and listen for Call events
+	call.on('connected', function(status) {
+		/* This is called as soon as the call is connected to 16145558888 (when they answer)
+			Note: status is probably 'in-progress' at this point.
+			We can generate our TwiML here, as well.
+		*/
+	});
+	//Now we generate TwiML for this call... which will served up to Twilio when the call is connected
+	call.say("Hello. This is a test of the Twilio API.");
+	call.pause();
+	var input = call.gather(function(call, digits) {
+		call.say("You pressed " + digits + ".");
+		var str = "Congratulations! You just used Node Twilio API to place an outgoing call.";
+		call.say(str, {'voice': 'man', 'language': 'en'});
+		call.pause();
+		call.say(str, {'voice': 'man', 'language': 'en-gb'});
+		call.pause();
+		call.say(str, {'voice': 'woman', 'language': 'en'});
+		call.pause();
+		call.say(str, {'voice': 'woman', 'language': 'en-gb'});
+		call.pause();
+		call.say("Goodbye!");
+	}, {
+		'timeout': 10,
+		'numDigits': 1
+	});
+	input.say("Please press any key to continue. You may press 1, 2, 3, 4, 5, 6, 7, 8, 9, or 0.");
+	call.say("I'm sorry. I did not hear your response. Goodbye!");
+	call.on('ended', function(status, duration) {
+		/* This is called when the call ends.
+			Note: status is probably 'completed' at this point. */
+	});
+});
+```
+
+Here are all of the TwiML commands you can use:
+
+ - `Call.say(text[, options])` - Reads `text` to the caller using text to speech. Options include:
+	- `voice` - 'man' or 'woman' (default: 'man')
+	- `language` - allows you pick a voice with a specific language's accent and pronunciations.
+		Allowed values: 'en', 'en-gb', 'es', 'fs', 'de' (default: 'en')
+	- `loop` - specifies how many times you'd like the text repeated. The default is once.
+		Specifying '0' will cause the <Say> verb to loop until the call is hung up.
+ - `Call.play(audioURL[, options])` - plays an audio file back to the caller. Twilio retrieves the
+	file from a URL (`audioURL`) that you provide. Options include:
+	- `loop` - specifies how many times the audio file is played. The default behavior is to play the
+		audio once. Specifying '0' will cause the the <Play> verb to loop until the call is hung up.
+ - `Call.pause([duration])
+	- waits silently for a `duration` seconds. If <Pause> is the first verb in a TwiML
+	document, Twilio will wait the specified number of seconds before picking up the call.
+ - `Call.gather(cbIfInput, options, cbIfNoInput)` - Gathers input from the telephone user's keypad.
+	Calls `cbIfInput` once the user provides input. If the user does not provide valid input in a timely
+	manner, `cbIfNoInput` is called if it was provided; otherwise, the next TwiML instruction will
+	be executed.  Options include:
+	- `timeout`
+	- `finishOnKey`
+	- `numDigits`
+ - `Call.record(...)` - Not yet implemented
+ - `Call.sms(...)` - Not yet implemented
+ - `Call.dial(...)` - Do not use. Not tested.
+ - `Call.hangup()` - Ends a call. If used as the first verb in a TwiML response it does not prevent
+	Twilio from answering the call and billing your account.
+ - `Call.redirect(url, method)` - Transfers control of a call to the TwiML at a different URL.
+	All verbs after <Redirect> are unreachable and ignored. Twilio will request a new TwiML document
+	from `url` using the HTTP `method` provided.
+ - `Call.reject(reason)` - rejects an incoming call to your Twilio number without billing you. This
+	is very useful for blocking unwanted calls. If the first verb in a TwiML document is <Reject>,
+	Twilio will not pick up the call. The call ends with a status of 'busy' or 'no-answer',
+	depending on the `reason` provided. Any verbs after <Reject> are unreachable and ignored.
+	Possible `reason`s include: 'rejected', 'busy' (default: 'rejected')
+ - `Call.cb(cb)` - When reached, Twilio will use the <Redirect> verb to re-route control to the specified
+	callback function, `cb`. The `cb` will be passed the Call object. Note: this is mostly for internal
+	use.
+
+#### <a name="callEvents"></a>Call Events
+
+- Event: 'connected' `function(status) {}` - Emitted when the call connects. See the
+	[Twilio Documentation]
+	(http://www.twilio.com/docs/api/twiml/twilio_request#request-parameters-call-status)
+	for possible call status values.
+- Event: 'ended' `function(status, callDuration) {}` - Emitted when the call ends. See the
+	[Twilio Documentation]
+	(http://www.twilio.com/docs/api/twiml/twilio_request#request-parameters-call-status)
+	for possible call status values.
+
+#### <a name="appEvents"></a>Application Events
+
+- Event: 'outgoingCall' `function(call) {}` - Triggered when Twilio connects an outgoing call
+	placed with `makeCall`.
 
 #### <a name="incomingCallEvent"></a>Handling incoming calls
 
-- `incomingCall` Event - Triggered when the Twilio middleware receives a voice request from Twilio.
+- Event: 'incomingCall' `function(call) {}` - Triggered when the Twilio middleware receives a
+	voice request from Twilio.
 
-### <a name="listIterator"></a>ListIterator
+#### <a name="listIterator"></a>ListIterator
 
 A ListIterator Object is returned when Twilio reponses may be large. For example, if one were to list
 all subaccounts, the list might be relatively lengthy.  For these responses, Twilio returns 20 or so
@@ -209,7 +320,8 @@ The ListIterator Object has several properties and methods:
 - `PageSize` - The number of results per page (this can be changed and the default is 20)
 - `Results` - The array of results. If results are a list of accounts, this will be an array of Account
 	Objects, if it's a list of applications, this will be an array of Application Objects, etc.
-- `nextPage([cb])` - Requests that the next page of results be loaded. Callback is of the form `cb(err, li)`
+- `nextPage([cb])` - Requests that the next page of results be loaded. Callback is of the form
+	`cb(err, li)`
 - `prevPage([cb])` - Requests that the previous page of results be loaded.
 
 ## Testing
