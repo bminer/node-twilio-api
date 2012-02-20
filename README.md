@@ -47,14 +47,15 @@ the next few months.
 	- An idea for this is to intercept incoming Twilio requests only if the message is for
 	that specific instance. Perhaps use URL namespacing or cookies for this?
 
-## Usage
+## Basic Usage
 
 1. Create a Client using your Account SID and Auth Token.
-2. Select your main account or a subaccount.
-3. Do stuff...
-	- Call API functions against that account (i.e. place a call)
-	- Write logic to generate TwiML when Twilio sends a request to your
-		application (i.e. when an incoming call rings)
+2. Load or create a Twilio application and point the VoiceUrl, SmsUrl, etc. to your Node.JS server.
+3. Add the `client.middleware()` to your Express/Connect stack. Start your server.
+	Call `app.register()` to register your application with the middleware.
+4. Use `app.makeCall` to place calls
+5. Use `app.on('incomingCall', function(call) {...} );` to handle inbound calls.
+6. Generate TwiML by calling methods on the Call object directly.
 
 ```javascript
 var express = require('express'),
@@ -64,16 +65,28 @@ var twilioAPI = require('twilio-api'),
 app.use(cli.middleware() );
 app.listen(PORT_NUMBER);
 //Get a Twilio application and register it
-cli.account.getApplication(ApplicationSid, function(err, app) {
+cli.account.getApplication(APPLICATION_SID, function(err, app) {
 	if(err) throw err;
 	app.register();
-	app.on('incomingCall', function(...) {
-		//... functionality coming soon...
+	app.on('incomingCall', function(call) {
+		//Use the Call object to generate TwiML
+		call.say("This is a test. Goodbye!");
 	});
-	app.makeCall(...);
+	app.makeCall("+12225551234", "+13335551234", function(err, call) {
+		if(err) throw err;
+		call.on('connected', function(status) {
+			//Called when the caller picks up
+			call.say("This is a test. Goodbye!");
+		});
+		call.on('ended', function(status, duration) {
+			//Called when the call ends
+		});
+	});
 });
-//... more sample code coming soon...
-//For now, check the /tests folder
+/*
+... more sample code coming soon...
+For now, check the /tests folder
+*/
 ```
 
 ## API
