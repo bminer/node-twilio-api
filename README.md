@@ -13,8 +13,8 @@ an account](https://www.twilio.com/try-twilio)
 ## Install
 
 This project is in an **alpha** stage. Placing and receiving calls should now be working, but these
-features are an their infantcy. **Do NOT use in production environments yet!
-Use at your own risk!**
+features are an their infantcy.  Call recording and conferences have not yet been tested.
+**Do NOT use in production environments yet! Use at your own risk!**
 
 `npm install twilio-api`
 
@@ -27,11 +27,13 @@ the next few months.
  - [Manage accounts and subaccounts](#manageAccts)
  - [List available local and toll-free numbers](#listNumbers)
  - [Manage Twilio applications](#applications)
- - List calls and modify live calls
+ - List calls and modify live calls *(Support is limited at this time)*
  - [Place calls](#placingCalls)
  - [Receive calls](#incomingCallEvent)
  - [Generate TwiML responses](#generatingTwiML) without writing any XML (I don't like XML).
+ - [Conferences, Briding Calls, etc](#joinConference)
  - [Built-in pagination with ListIterator Object](#listIterator)
+ - Access recordings, transcriptions, and notifications *(Support is limited at this time)*
 
 ## Todo
 
@@ -41,7 +43,6 @@ the next few months.
  - List and manage conferences, conference details, and participants
  - Send/receive SMS messages
 	 - List SMS short codes and details
- - Access recordings, transcriptions, and notifications
  - Respond to fallback URLs
  - Better scalability with multiple Node instances
 	- An idea for this is to intercept incoming Twilio requests only if the message is for
@@ -167,8 +168,10 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 		`friendlyName`, where callback is `cb(err, app)`
 		The `VoiceUrl`, `voiceMethod` and other required arguments are used to intercept incoming
 		requests from Twilio using the provided Connect middleware. These URLs should point to the same
-		server instance as the one running, and
-		you should ensure that they do not interfere with the namespace of your web application.
+		server instance as the one running, and you should ensure that they do not interfere with
+		the namespace of your web application.
+		** CAUTION: It is highly recommended that you use 'POST' as the method for all requests;
+		otherwise, strange behavior may occur. **
 - `Account.listApplications([filters,] cb)`
 - `Application.load([cb])`
 - `Application.save([cb])`
@@ -273,7 +276,7 @@ Here are all of the TwiML commands you can use:
 		audio once. Specifying '0' will cause the the &lt;Play&gt; verb to loop until the call is hung up.
  - `Call.pause([duration])`	- waits silently for a `duration` seconds. If &lt;Pause&gt; is the first
 	verb in a TwiML document, Twilio will wait the specified number of seconds before picking up the call.
- - `Call.gather(cbIfInput, options, cbIfNoInput)` - Gathers input from the telephone user's keypad.
+ - `Call.gather(cbIfInput[, options, cbIfNoInput])` - Gathers input from the telephone user's keypad.
 	Calls `cbIfInput` once the user provides input, passing the Call object as the first argument and
 	the input provided as the second argument. If the user does not provide valid input in a timely
 	manner, `cbIfNoInput` is called if it was provided; otherwise, the next TwiML instruction will
@@ -292,15 +295,76 @@ Here are all of the TwiML commands you can use:
 		enters that number of digits.
 	The `Call.gather()` function returns a Gather Object with methods: `say()`, `play()`, and `pause()`,
 	allowing you to nest those verbs within the &lt;Gather&gt; verb.
- - `Call.record(...)` - Not yet implemented
+ - `Call.record(cb[, options, cbIfEmptyRecording])` - records the caller's voice and returns to you the
+	URL of a file containing the audio recording. Callback is called when the recording is complete
+	and should be of the form: `cb(call, recordingURL, recordingDuration, input)` where `call`
+	is the Call object, `recordingURL` is the URL that can be fetched to retrieve the recording,
+	`recordingDuration` is the duration of the recording, and `input` is the key (if any) pressed
+	to end the recording, or the string 'hangup' if the caller hung up. If the user does not speak
+	during the recording, `cbIfEmptyRecording` is called if it was provided; otherwise, the next
+	TwiML instruction will be executed.
+	Options include:
+	- `timeout` - tells Twilio to end the recording after a number of seconds of silence has
+		passed. The default is 5 seconds.
+	- `finishOnKey` - a set of digits that end the recording when entered. The allowed values are the
+		digits 0-9, '#' and '*'. The default is '1234567890*#' (i.e. any key will end the recording).
+	- `maxLength` - the maximum length for the recording in seconds. This defaults to 3600 seconds
+		(one hour) for a normal recording and 120 seconds (two minutes) for a transcribed recording.
+	- `transcribe` - tells Twilio that you would like a text representation of the audio of the recording.
+		Twilio will pass this recording to our speech-to-text engine and attempt to convert the audio
+		to human readable text. The 'transcribe' option is off by default. If you do not wish to
+		perform transcription, simply do not include the transcribe attribute.
+		**Transcription is a pay feature.** If you include a 'transcribe' or 'transcribeCallback'
+		option, your account will be charged. See the pricing page for Twilio transcription prices.
+	- `transcribeCallback` - a function that will be called when the transcription is complete.
+		Callback should be of the form: `cb(call, transcriptionStatus, transcriptionText,
+		transcriptionUrl, recordingUrl)`. TwiML generated on the Call object will not be executed until
+		later because a transcribeCallback does not affect the call flow.
+	- `playBeep` - play a sound before the start of a recording. If you set the value
+		to 'false', no beep sound will be played. Defaults to true.
  - `Call.sms(...)` - Not yet implemented
- - `Call.dial(...)` - Do not use. Not tested.
+ - `Call.joinConference([roomName, option, cbOnEnd])` - connects the call to a conference room. If
+	`roomName` is not specified, the caller will be placed into a uniquely named, empty conference room.
+	The name of the conference room into which the call is placed is returned by this function.
+	`cbOnEnd` will be called when the call ends, if it is specified; otherwise, the next TwiML
+	instruction will be executed when this conference ends. `cbOnEnd` should be of the form:
+	`cb(call, status)`.
+	Options include:
+	- `leaveOnStar` - lets the calling party leave the conference room if '*' is pressed on the caller's
+		keypad. Defaults to false.
+	- `timeLimit` - the maximum duration of the conference.  By default, there is a four hour time
+		limit set on calls.
+	- `muted` - whether the caller can speak on the conference. If this attribute is set to 'true',
+		the participant will only be able to listen to people on the conference. Defaults to 'false'.
+	- `beep` - whether a notification beep is played to the conference when a participant joins or
+		leaves the conference. Defaults to true.
+	- `startConferenceOnEnter` - tells a conference to start when this participant joins the conference,
+		if it is not already started. Defaults to true. If this is false and the participant joins a
+		conference that has not started, they are muted and hear background music until a participant
+		joins where `startConferenceOnEnter` is true.
+	- `endConferenceOnExit` - ends the conference when this caller leaves, causing all other participants
+		in the conference to drop out. Defaults to false.
+	- `waitURL` - a URL for music that plays before the conference has started. The URL may be an MP3,
+		a WAV or a TwiML document that uses <Play> or <Say> for content. Defaults to
+		'http://twimlets.com/holdmusic?Bucket=com.twilio.music.classical'. For more information,
+		view the [Twilio Documentation]
+		(http://www.twilio.com/docs/api/twiml/conference#attributes-waitUrl)
+	- `waitMethod` - indicates which HTTP method to use when requesting 'waitUrl'. Defaults to 'POST'.
+		Be sure to use 'GET' if you are directly requesting static audio files such as WAV or MP3 files
+		so that Twilio properly caches the files.
+	- `maxParticipants` - the maximum number of participants you want to allow within a named conference
+		room. The default maximum number of participants is 40. The value must be a positive integer
+		less than or equal to 40.
+ - `Call.dial` - Not implemented, and probably will never be implemented.
+	- You can use `Call.joinConference` to join a conference room.
+	- You can use `Application.makeCall` to call other participants and tell them all to join a
+		conference room.  This is the recommended way to bridge calls, for example.
  - `Call.hangup()` - Ends a call. If used as the first verb in a TwiML response it does not prevent
 	Twilio from answering the call and billing your account.
  - `Call.redirect(url, method)` - Transfers control of a call to the TwiML at a different URL.
 	All verbs after &lt;Redirect&gt; are unreachable and ignored. Twilio will request a new TwiML document
 	from `url` using the HTTP `method` provided.
- - `Call.reject(reason)` - rejects an incoming call to your Twilio number without billing you. This
+ - `Call.reject([reason])` - rejects an incoming call to your Twilio number without billing you. This
 	is very useful for blocking unwanted calls. If the first verb in a TwiML document is &lt;Reject&gt;,
 	Twilio will not pick up the call. The call ends with a status of 'busy' or 'no-answer',
 	depending on the `reason` provided. Any verbs after &lt;Reject&gt; are unreachable and ignored.
