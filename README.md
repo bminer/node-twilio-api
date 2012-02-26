@@ -142,6 +142,7 @@ Oh, yes.  The middleware also uses your Twilio AuthToken to validate incoming re
 - `Client.createSubAccount([FriendlyName,] cb)` Create a subaccount, where callback is `cb(err, account)`
 - `Client.listAccounts([filters,] cb)` - List accounts and subaccounts using the specified `filters`,
 	where callback is `cb(err, li)` and `li` is a ListIterator Object.
+	`filters` may include 'FriendlyName' and/or 'Status' properties.
 - `Account.load([cb])` - Load the Account details from Twilio, where callback is `cb(err, account)`
 - `Account.save([cb])` - Save the Account details to Twilio, where callback is `cb(err, account)`
 - `Account.closeAccount([cb])` - Permanently close this account, where callback is `cb(err, account)`
@@ -172,7 +173,8 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 		the namespace of your web application.
 		** CAUTION: It is highly recommended that you use 'POST' as the method for all requests;
 		otherwise, strange behavior may occur. **
-- `Account.listApplications([filters,] cb)`
+- `Account.listApplications([filters,] cb)` - List applications associated with this Account.
+	`filters` may include a 'FriendlyName' property. Callback is of the form: `cb(err, li)`
 - `Application.load([cb])`
 - `Application.save([cb])`
 - `Application.remove([cb])` - Permanently deletes this Application from Twilio, where callback
@@ -225,6 +227,8 @@ Phone numbers should be formatted with a '+' and country code e.g., +16175551212
 - `Application.listCalls([filters,] cb)` - Lists live and completed calls associated with an Account.
 	Note: you must call Application.listCalls, not Account.listCalls.  This is a side-effect
 	caused by the Application and Call being very inter-related.
+	Refer to the [Twilio Documentation](http://www.twilio.com/docs/api/rest/call#list-get) to see
+	what `filters` you can use. Again, callback is of the form: `cb(err, li)`.
 - `Call.load([cb])`
 - `Call.save([cb])`
 - `Call.liveCancel([cb])` - will attempt to hangup this call if it is queued or ringing, but not
@@ -350,7 +354,8 @@ Here are all of the TwiML commands you can use:
 	The name of the conference room into which the call is placed is returned by this function.
 	`cbOnEnd` will be called when the call ends, if it is specified; otherwise, the next TwiML
 	instruction will be executed when this conference ends. `cbOnEnd` should be of the form:
-	`cb(call, status)`.
+	`cb(call, status)`.  Please keep in mind that conferences do not start until at least two
+	participants join; in the meantime, the caller must wait.
 	Options include:
 	- `leaveOnStar` - lets the calling party leave the conference room if '*' is pressed on the caller's
 		keypad. Defaults to false.
