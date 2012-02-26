@@ -1,7 +1,8 @@
 var twilio = require('../lib'),
 	credentials,
 	client,
-	Application = require('../lib/Application');
+	Application = require('../lib/Application'),
+	Call = require('../lib/Call');
 
 exports.getTwilioCredentials = function(t) {
 	t.expect(3);
@@ -159,6 +160,20 @@ exports.testApplicationRegistration = function(t) {
 	t.equal(client._appMiddlewareSids.length, 0);
 	t.equal(Object.keys(client._appMiddleware).length, 0);
 	t.done();
+}
+
+exports.listCalls = function(t) {
+	t.expect(4);
+	createdApp.listCalls(function(err, li) {
+		t.ifError(err);
+		if(li)
+		{
+			t.ok(li.Calls instanceof Array, "List is not an array?");
+			t.ok(li.Calls.length > 0, "List is empty");
+			t.ok(li.Calls[0] instanceof Call, "List item is not a Call object");
+		}
+		t.done();
+	});
 }
 
 exports.removeApplication = function(t) {

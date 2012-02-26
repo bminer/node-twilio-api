@@ -27,7 +27,7 @@ the next few months.
  - [Manage accounts and subaccounts](#manageAccts)
  - [List available local and toll-free numbers](#listNumbers)
  - [Manage Twilio applications](#applications)
- - List calls and modify live calls *(Support is limited at this time)*
+ - [List calls and modify live calls](#listAndModifyCalls)
  - [Place calls](#placingCalls)
  - [Receive calls](#incomingCallEvent)
  - [Generate TwiML responses](#generatingTwiML) without writing any XML (I don't like XML).
@@ -206,6 +206,11 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 	include: any digit (0-9), '#', '*' and 'w' (to insert a half second pause).
 - ifMachine - Tell Twilio to try and determine if a machine (like voicemail) or a human has answered
 	the call. Possible values are 'Continue', 'Hangup', and null (the default).
+	Answering machine detection is an experimental feature, and support is limited. The downside of
+	trying to detect a machine is that Twilio needs to listen to the first few seconds of audio after
+	connecting a call. This usually results in a few seconds of delay before Twilio begins processing
+	TwiML. If your application does not care about the human vs. machine distinction, then omit the
+	'ifMachine' option, and Twilio will perform no such analysis.
 - timeout - The integer number of seconds that Twilio should allow the phone to ring before assuming
 	there is no answer. Default is 60 seconds, the maximum is 999 seconds.
 
@@ -214,6 +219,22 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 	the various events on the Call Object.
 
 Phone numbers should be formatted with a '+' and country code e.g., +16175551212 (E.164 format).
+
+#### <a name="listAndModifyCalls"></a>List Calls and Modify Live Calls
+
+- `Application.listCalls([filters,] cb)` - Lists live and completed calls associated with an Account.
+	Note: you must call Application.listCalls, not Account.listCalls.  This is a side-effect
+	caused by the Application and Call being very inter-related.
+- `Call.load([cb])`
+- `Call.save([cb])`
+- `Call.liveCancel([cb])` - will attempt to hangup this call if it is queued or ringing, but not
+	affect the call if it is already in progress.
+- `Call.liveHangUp([cb])` - will attempt to hang up this call even if it's already in progress.
+- `Call.liveRedirect(url, method)` - Transfers control of this call **immediately** to the TwiML at
+	the specified URL. Note: this is quite different from `Call.redirect`, which should be used when TwiML
+	is being served to Twilio.
+- `Call.liveCb(cb)` - Will use the `Call.liveRedirect` function to **immediately** re-route control to
+	the specified callback function, `cb`. The `cb` will be passed the Call object.
 
 #### <a name="generatingTwiML"></a>Generating TwiML
 
