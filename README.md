@@ -323,6 +323,7 @@ Here are all of the TwiML commands you can use:
 	- `playBeep` - play a sound before the start of a recording. If you set the value
 		to 'false', no beep sound will be played. Defaults to true.
  - `Call.sms(...)` - Not yet implemented
+<a name="joinConference"></a>
  - `Call.joinConference([roomName, option, cbOnEnd])` - connects the call to a conference room. If
 	`roomName` is not specified, the caller will be placed into a uniquely named, empty conference room.
 	The name of the conference room into which the call is placed is returned by this function.
