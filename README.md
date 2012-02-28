@@ -189,7 +189,7 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 #### <a name="placingCalls"></a>Placing Calls
 
-- `app.makeCall(from, to, options[, onConnectCallback])` - Place a call and call the callback once the
+- `app.makeCall(from, to, [options, onConnectCallback])` - Place a call and call the callback once the
 	party answers. **The callbacks will only be called if `app` is a registered application!**
 	If your application is registered, but your VoiceUrl is not set to the same server,
 	the callee will receive an error message and a debug error will be logged on your account.
@@ -355,12 +355,17 @@ Here are all of the TwiML commands you can use:
 	`cbOnEnd` will be called when the call ends, if it is specified; otherwise, the next TwiML
 	instruction will be executed when this conference ends. `cbOnEnd` should be of the form:
 	`cb(call, status)`.  Please keep in mind that conferences do not start until at least two
-	participants join; in the meantime, the caller must wait.
+	participants join; in the meantime, the caller must wait. In addition, a conference does not end
+	until all callers drop out. This means that there are only a few ways to end a conference:
+	- You press * and `leaveOnStar` is set.
+	- `timeLimit` expires.
+	- Someone leaves who had `endConferenceOnExit` set.
+	- You end the conference manually using one of the `Conference` Object methods.
 	Options include:
 	- `leaveOnStar` - lets the calling party leave the conference room if '*' is pressed on the caller's
 		keypad. Defaults to false.
-	- `timeLimit` - the maximum duration of the conference.  By default, there is a four hour time
-		limit set on calls.
+	- `timeLimit` - the maximum duration of the conference in seconds.  By default, there is a four hour
+		time limit set on calls.
 	- `muted` - whether the caller can speak on the conference. If this attribute is set to 'true',
 		the participant will only be able to listen to people on the conference. Defaults to 'false'.
 	- `beep` - whether a notification beep is played to the conference when a participant joins or
