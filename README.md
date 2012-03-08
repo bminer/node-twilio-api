@@ -12,11 +12,15 @@ an account](https://www.twilio.com/try-twilio)
 
 ## Install
 
-This project is in an **alpha** stage. Placing and receiving calls should now be working, but these
-features are an their infantcy.  Call recording and conferences have not yet been tested.
-**Do NOT use in production environments yet! Use at your own risk!**
+Project Status: Beta - Not recommended for use in production environments just yet, but please test!
 
 `npm install twilio-api`
+
+This project is in an **beta** stage. Placing and receiving calls work rather well.
+Call recording and conferences have not yet been thoroughly tested.
+
+While I do not believe that this API is ready for a production environment, I would love to get some
+people using it, testing it, and submitting issues through GitHub.  Thanks!
 
 ## Features and Library Overview
 

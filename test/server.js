@@ -11,9 +11,12 @@ exports.constructClient = function() {
 }
 
 exports.setupExpressMiddleware = function(t) {
-	app.use(express.logger() );
+	if(process.env.NODE_ENV == "development")
+		app.use(function(req, res, next) {
+			console.log("\033[46m\033[30m" + "Incoming request: " + req.method + " " + req.url + "\033[0m");
+			next();
+		});
 	app.use(client.middleware() );
-	app.use(app.router);
 	app.use(express.errorHandler({
 		'showMessage': true,
 		'dumpExceptions': true
@@ -41,21 +44,37 @@ exports.makeCall = function(t) {
 	var credentials = client.credentials;
 	if(credentials.FromNumber && credentials.ToNumber)
 	{
-		console.log("Placing call...");
 		tapp.makeCall(credentials.FromNumber, credentials.ToNumber, {
-			'timeout': 3
+			'timeout': 12
 		}, function(err, call) {
 			t.ifError(err);
 			if(!err && call)
 			{
+				console.log("Placing call", call.Sid);
+				/*setTimeout(function() {
+					call.load(function(err, call) {
+						if(err) console.log(err);
+						else console.log("Call status:", call.Sid, call.Status);
+					});
+				}, 20000);*/
 				call.on('connected', function() {
-					console.log(call, "connected", arguments);
+					console.log(call.Sid, "connected:", arguments);
+					call.say("This is a marketing survey from ABC Consulting.");
+					call.gather(function(call, digits) {
+						console.log("The caller pressed " + digits);
+						call.say("Thank you! You must really be a D bag. Have a nice day.");
+					}, {
+						'timeout': 15,
+						'numDigits': 1
+					}, function() {
+						console.log("The caller did not give any input");
+						call.say("I did hear any input. Goodbye.");
+					}).say("Press 1 if you think Scott is a D bag.");
 				});
 				call.on('ended', function() {
-					console.log(call, "ended", arguments);
+					console.log(call.Sid, "ended:", call.Status, ":", arguments);
 					t.done();
 				});
-				call.say("Goodbye");
 			}
 		});
 	}
