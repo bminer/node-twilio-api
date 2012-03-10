@@ -129,7 +129,7 @@ cli.account.getApplication(ApplicationSid, function(err, app) {
 	
 	/* The following line tells Twilio to look at the URL path of incoming HTTP requests
 	and pass those requests to the application if it matches the application's VoiceUrl/VoiceMethod,
-	SmsURL/SmsMethod, etc. As of right now, you need to create a Twilio application to use the
+	SmsUrl/SmsMethod, etc. As of right now, you need to create a Twilio application to use the
 	Express middleware. */
 	app.register();
 });
@@ -169,7 +169,7 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 - `Account.getApplication(Sid, cb)` - Get an Application by Sid. The Application Object is passed to
 	the callback `cb(err, app)`
 - `Account.createApplication(voiceUrl, voiceMethod, statusCb, statusCbMethod,
-	smsURL, smsMethod, SmsStatusCb, [friendlyName], cb)` - Creates an Application with
+	smsUrl, smsMethod, SmsStatusCb, [friendlyName], cb)` - Creates an Application with
 		`friendlyName`, where callback is `cb(err, app)`
 		The `VoiceUrl`, `voiceMethod` and other required arguments are used to intercept incoming
 		requests from Twilio using the provided Connect middleware. These URLs should point to the same
@@ -291,7 +291,57 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 });
 ```
 
-Here are all of the TwiML commands you can use:
+### CAUTION: COMMON PITFALL:
+
+DO NOT DO THE FOLLOWING:
+
+```javascript
+app.makeCall("+16145555555", "+16145558888", function(err, call) {
+	if(err) throw err;
+	//Now we can use the call Object to generate TwiML and listen for Call events
+	call.on('connected', function(status) {
+		//Using an asyncronous function call -- INCORRECT: this will not work as expected!
+		fs.readFile('greeting.txt', function(err, data) {
+			if(err) throw err;
+			call.say(data);
+		});
+	});
+});
+```
+
+Notice that the 'connected' event completes before the file has been read. This means that Twilio
+has already requested and received the TwiML for the call. The call will be answered by Twilio
+and then immediately hung up (since no TwiML is provided).
+
+INSTEAD, DO THIS:
+
+```javascript
+app.makeCall("+16145555555", "+16145558888", function(err, call) {
+	if(err) throw err;
+	//Now we can use the call Object to generate TwiML and listen for Call events
+	call.on('connected', function(status) {
+		//Put the call on hold
+		var confName = call.joinConference({'startConferenceOnEnter': true,
+			'endConferenceOnExit': true,
+			'waitUrl': '' //Disable hold music
+		});
+		call.say("This is probably never executed.");
+		//Using an asyncronous function call
+		fs.readFile('greeting.txt', function(err, data) {
+			if(err) {
+				//Probably should terminate the call
+				call.liveHangUp();
+				throw err;
+			}
+			call.liveCb(function() {
+				call.say(data);
+			});
+		});
+	});
+});
+```
+
+#### Here are all of the TwiML commands you can use:
 
  - `Call.say(text[, options])` - Reads `text` to the caller using text to speech. Options include:
 	- `voice` - 'man' or 'woman' (default: 'man')
@@ -299,8 +349,8 @@ Here are all of the TwiML commands you can use:
 		Allowed values: 'en', 'en-gb', 'es', 'fs', 'de' (default: 'en')
 	- `loop` - specifies how many times you'd like the text repeated. The default is once.
 		Specifying '0' will cause the &lt;Say&gt; verb to loop until the call is hung up.
- - `Call.play(audioURL[, options])` - plays an audio file back to the caller. Twilio retrieves the
-	file from a URL (`audioURL`) that you provide. Options include:
+ - `Call.play(audioUrl[, options])` - plays an audio file back to the caller. Twilio retrieves the
+	file from a URL (`audioUrl`) that you provide. Options include:
 	- `loop` - specifies how many times the audio file is played. The default behavior is to play the
 		audio once. Specifying '0' will cause the the &lt;Play&gt; verb to loop until the call is hung up.
  - `Call.pause([duration])`	- waits silently for a `duration` seconds. If &lt;Pause&gt; is the first
@@ -326,8 +376,8 @@ Here are all of the TwiML commands you can use:
 	allowing you to nest those verbs within the &lt;Gather&gt; verb.
  - `Call.record(cb[, options, cbIfEmptyRecording])` - records the caller's voice and returns to you the
 	URL of a file containing the audio recording. Callback is called when the recording is complete
-	and should be of the form: `cb(call, recordingURL, recordingDuration, input)` where `call`
-	is the Call object, `recordingURL` is the URL that can be fetched to retrieve the recording,
+	and should be of the form: `cb(call, recordingUrl, recordingDuration, input)` where `call`
+	is the Call object, `recordingUrl` is the URL that can be fetched to retrieve the recording,
 	`recordingDuration` is the duration of the recording, and `input` is the key (if any) pressed
 	to end the recording, or the string 'hangup' if the caller hung up. If the user does not speak
 	during the recording, `cbIfEmptyRecording` is called if it was provided; otherwise, the next
@@ -365,6 +415,7 @@ Here are all of the TwiML commands you can use:
 	- `timeLimit` expires.
 	- Someone leaves who had `endConferenceOnExit` set.
 	- You end the conference manually using one of the `Conference` Object methods.
+	
 	Options include:
 	- `leaveOnStar` - lets the calling party leave the conference room if '*' is pressed on the caller's
 		keypad. Defaults to false.
@@ -380,7 +431,7 @@ Here are all of the TwiML commands you can use:
 		joins where `startConferenceOnEnter` is true.
 	- `endConferenceOnExit` - ends the conference when this caller leaves, causing all other participants
 		in the conference to drop out. Defaults to false.
-	- `waitURL` - a URL for music that plays before the conference has started. The URL may be an MP3,
+	- `waitUrl` - a URL for music that plays before the conference has started. The URL may be an MP3,
 		a WAV or a TwiML document that uses <Play> or <Say> for content. Defaults to
 		'http://twimlets.com/holdmusic?Bucket=com.twilio.music.classical'. For more information,
 		view the [Twilio Documentation]
