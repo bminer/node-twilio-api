@@ -424,10 +424,13 @@ Here are all of the TwiML commands you can use:
 	[Twilio Documentation]
 	(http://www.twilio.com/docs/api/twiml/twilio_request#request-parameters-call-status)
 	for possible call status values.
+	*EDIT:* I think the only possible call status value is 'in-progress'. See issue #3.
 - Event: 'ended' `function(status, callDuration) {}` - Emitted when the call ends. See the
 	[Twilio Documentation]
 	(http://www.twilio.com/docs/api/twiml/twilio_request#request-parameters-call-status)
 	for possible call status values.
+	*EDIT:* I believe the only possible call status values are: `['completed', 'busy',
+	'failed', 'no-answer', 'canceled']`. See issue #3.
 
 #### <a name="appEvents"></a>Application Events
 
