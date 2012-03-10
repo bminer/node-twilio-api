@@ -401,9 +401,11 @@ Here are all of the TwiML commands you can use:
 	All verbs after &lt;Redirect&gt; are unreachable and ignored. Twilio will request a new TwiML document
 	from `url` using the HTTP `method` provided.
  - `Call.reject([reason])` - rejects an incoming call to your Twilio number without billing you. This
-	is very useful for blocking unwanted calls. If the first verb in a TwiML document is &lt;Reject&gt;,
-	Twilio will not pick up the call. The call ends with a status of 'busy' or 'no-answer',
-	depending on the `reason` provided. Any verbs after &lt;Reject&gt; are unreachable and ignored.
+	is very useful for blocking unwanted calls. **If and only if the first verb in a TwiML document is
+	&lt;Reject&gt;,	Twilio will not pick up the call. This means `Call.reject()` must be called before any
+	other TwiML-generating function. You cannot `Call.say()` and then `Call.reject()`**
+	The call ends with a status of 'no-answer' or 'busy', depending on the `reason` provided.
+	**Any verbs after &lt;Reject&gt; are unreachable and ignored.**
 	Possible `reason`s include: 'rejected', 'busy' (default: 'rejected')
  - `Call.cb(cb)` - When reached, Twilio will use the &lt;Redirect&gt; verb to re-route control to the
 	specified callback function, `cb`. The `cb` will be passed the Call object. This is useful if you
