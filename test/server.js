@@ -11,6 +11,9 @@ exports.constructClient = function() {
 }
 
 exports.setupExpressMiddleware = function(t) {
+	t.expect(2);
+	t.equal(typeof client.middleware, "function");
+	t.equal(typeof express.errorHandler, "function");
 	if(process.env.NODE_ENV == "development")
 		app.use(function(req, res, next) {
 			console.log("\033[46m\033[30m" + "Incoming request: " + req.method + " " + req.url + "\033[0m");
@@ -36,79 +39,52 @@ exports.loadApplication = function(t) {
 }
 
 exports.registerApplication = function(t) {
+	t.expect(6);
+	t.equal(client._appMiddlewareSids.length, 0);
+	t.equal(Object.keys(client._appMiddleware).length, 0);
 	tapp.register();
+	t.equal(client._appMiddlewareSids.length, 1);
+	t.equal(client._appMiddlewareSids[0], tapp.Sid);
+	t.equal(Object.keys(client._appMiddleware).length, 1);
+	t.equal(typeof client._appMiddleware[tapp.Sid], "function");
 	t.done();
 }
 
+/* Place a call from caller ID credentials.FromNumber to credentials.ToNumber.
+	Callee must pick up the phone and press a key for this test to be successful. */
 exports.makeCall = function(t) {
+	t.expect(4);
 	var credentials = client.credentials;
 	if(credentials.FromNumber && credentials.ToNumber)
 	{
+		console.log("Placing call to " + credentials.ToNumber);
 		tapp.makeCall(credentials.FromNumber, credentials.ToNumber, {
 			'timeout': 12
 		}, function(err, call) {
 			t.ifError(err);
 			if(!err && call)
 			{
-				console.log("Placing call", call.Sid);
-				/*setTimeout(function() {
-					call.load(function(err, call) {
-						if(err) console.log(err);
-						else console.log("Call status:", call.Sid, call.Status);
-					});
-				}, 20000);*/
-				call.on('connected', function() {
-					console.log(call.Sid, "connected:", arguments);
-					call.say("This is a marketing survey from ABC Consulting.");
-					call.gather(function(call, digits) {
-						console.log("The caller pressed " + digits);
-						call.say("Thank you! You must really be a D bag. Have a nice day.");
-					}, {
-						'timeout': 15,
-						'numDigits': 1
-					}, function() {
-						console.log("The caller did not give any input");
-						call.say("I did hear any input. Goodbye.");
-					}).say("Press 1 if you think Scott is a D bag.");
-				});
-				call.on('ended', function() {
-					console.log(call.Sid, "ended:", call.Status, ":", arguments);
-					t.done();
-				});
-			}
-		});
-	}
-}
-
-/*
-exports.makeCall = function(t) {
-	var credentials = client.credentials;
-	if(credentials.FromNumber && credentials.ToNumber)
-	{
-		console.log("Placing call...");
-		tapp.makeCall(credentials.FromNumber, credentials.ToNumber, function(err, call) {
-			t.ifError(err);
-			if(!err && call)
-			{
 				call.on('connected', function(status) {
+					t.equal(status, 'in-progress', "connected event did not show in-progress status");
 					console.log(new Date().toUTCString() + ": Call " + call.Sid +
 						" has been connected: " + status);
 				});
 				call.say("Hello. This is a test of the Twilio API.");
 				call.pause();
 				var input = call.gather(function(call, digits) {
+					t.ok(digits != '', "Caller did not press any key");
 					call.say("You pressed " + digits + ".");
 					var str = "Congratulations! You just used Node Twilio API to place an " +
 						"outgoing call.";
 					call.say(str, {'voice': 'man', 'language': 'en'});
 					call.pause();
-					call.say(str, {'voice': 'woman', 'language': 'en-gb'});
-					call.pause();
+					var loop = 0;
 					(function getInputLoop(call) {
 						input = call.gather(function(call, digits) {
-							if(digits == "123")
+							if(digits.length == 10)
 							{
-								call.say("OK. I'm calling someone else now. Please wait.");
+								call.say("OK. I'm calling " + digits +
+									". Please wait. Press * at any time to end this call.");
 								var roomName = call.joinConference({
 									'leaveOnStar': true,
 									'timeLimit': 120,
@@ -116,20 +92,25 @@ exports.makeCall = function(t) {
 								});
 								call.say("The call has ended.");
 								//Now call the other person
-								tapp.makeCall(credentials.FromNumber, credentials.ToNumber2, {
-									'timeout': 3
+								tapp.makeCall(credentials.ToNumber, digits, {
+									'timeout': 12
 								}, function(err, call2)
 								{
-									var errorFunc = function(call) {
-										call.say("There was a problem contacting the other party.");
-										call.say("Status code: " + call.Status);
-										call.say("Goodbye");
+									function errorFunc(message) {
+										return function(err, call) {
+											if(err) t.ifError(err);
+											else
+											{
+												call.say(message);
+												call.say("Goodbye.");
+											}
+										};
 									};
-									if(err) call.liveCb(errorFunc);
+									if(err) call.liveCb(errorFunc("There was an error placing the call.") );
 									call2.on('connected', function(status) {
 										console.log("Call 2 connected:", status);
 										if(status != 'in-progress')
-											call.liveCb(errorFunc);
+											call.liveCb(errorFunc("Something weird happened. Sorry.") );
 										else
 										{
 											call2.say("Hello. Please wait while I connect you to " +
@@ -143,21 +124,43 @@ exports.makeCall = function(t) {
 									});
 									call2.on('ended', function(status, duration) {
 										console.log("Call 2 ended:", status, duration);
-										call.liveCb(errorFunc);
+										switch(status)
+										{
+											case 'no-answer':
+												call.liveCb(errorFunc("The caller did not answer.") );
+												break;
+											case 'busy':
+												call.liveCb(errorFunc("The caller's line was busy.") );
+												break;
+											case 'failed':
+												call.liveCb(errorFunc("There was an error placing the call.") );
+												break;
+											case 'completed':
+												break;
+											default:
+												call.liveCb(errorFunc("Something weird happened. Call status was " + status) );
+												break;
+										}
 									});
 								});
 							}
 							else
-								call.say("OK. I won't run the next test.");
+								call.say("You entered " + digits.length +
+									" digits, so I won't run the next test.");
 							call.say("Goodbye!");
 						}, {
 							'timeout': 10,
-							'finishOnKey': '#',
-							'numDigits': 3
+							'finishOnKey': '#'
 						});
-						input.say("Please press 1, 2, 3 to run the next test. Otherwise, press 0 and #.");
+						input.say("If you want to test calling another person, " +
+							"please enter their telephone number followed by #. " +
+							"Otherwise, you may hang up or simply press # to disconnect.");
 						call.say("Sorry. I didn't hear your response.");
-						call.cb(getInputLoop);
+						//Only prompt for input 3 times, then just give up and hangup
+						if(++loop <= 3)
+							call.cb(getInputLoop);
+						else
+							call.say("Goodbye!");
 					})(call);
 				}, {
 					'timeout': 10,
@@ -165,8 +168,9 @@ exports.makeCall = function(t) {
 				});
 				input.say("Please press any key to continue. " +
 					"You may press 1, 2, 3, 4, 5, 6, 7, 8, 9, or 0.");
-				call.say("I'm sorry. I did not hear your response. Goodbye!");
+				call.say("I'm sorry. I did not hear your response. The test will fail. Goodbye!");
 				call.on('ended', function(status, duration) {
+					t.equal(status, 'completed', 'Call status was not completed in ended event');
 					console.log(new Date().toUTCString() + ": Call " + call.Sid + " has ended: "
 						+ status + ":" + duration + " seconds");
 					t.done();
@@ -174,7 +178,7 @@ exports.makeCall = function(t) {
 			}
 		});
 	}
-}*/
+}
 
 exports.stopServer = function(t) {
 	app.close();

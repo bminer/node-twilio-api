@@ -10,6 +10,11 @@ Also ships with Connect/Express middleware to handle incoming Twilio requests.
 **IMPORTANT**: You will need a Twilio account to get started (it's not free). [Click here to sign up for 
 an account](https://www.twilio.com/try-twilio)
 
+#### Migrating to version 0.2.0
+
+- Call.liveCb(cb) has been changed such that the `cb` is now of the form: `cb(err, call)` instead of
+	`cb(call)`.
+
 ## Install
 
 Project Status: Beta - Not recommended for use in production environments just yet, but please test!
@@ -242,7 +247,7 @@ Phone numbers should be formatted with a '+' and country code e.g., +16175551212
 	the specified URL. Note: this is quite different from `Call.redirect`, which should be used when TwiML
 	is being served to Twilio.
 - `Call.liveCb(cb)` - Will use the `Call.liveRedirect` function to **immediately** re-route control to
-	the specified callback function, `cb`. The `cb` will be passed the Call object.
+	the specified callback function, `cb`. The `cb` must be of the form `cb(err, call)`.
 
 #### <a name="generatingTwiML"></a>Generating TwiML
 
