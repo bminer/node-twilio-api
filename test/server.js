@@ -53,10 +53,10 @@ exports.registerApplication = function(t) {
 /* Place a call from caller ID credentials.FromNumber to credentials.ToNumber.
 	Callee must pick up the phone and press a key for this test to be successful. */
 exports.makeCall = function(t) {
-	t.expect(4);
 	var credentials = client.credentials;
 	if(credentials.FromNumber && credentials.ToNumber)
 	{
+		t.expect(4);
 		console.log("Placing call to " + credentials.ToNumber);
 		tapp.makeCall(credentials.FromNumber, credentials.ToNumber, {
 			'timeout': 12
@@ -178,6 +178,7 @@ exports.makeCall = function(t) {
 			}
 		});
 	}
+	else t.done();
 }
 
 exports.stopServer = function(t) {

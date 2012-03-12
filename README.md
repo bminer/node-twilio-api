@@ -36,13 +36,12 @@ the next few months.
  - [Manage accounts and subaccounts](#manageAccts)
  - [List available local and toll-free numbers](#listNumbers)
  - [Manage Twilio applications](#applications)
- - [List calls and modify live calls](#listAndModifyCalls)
  - [Place calls](#placingCalls)
  - [Receive calls](#incomingCallEvent)
+ - [List calls and modify live calls](#listAndModifyCalls)
  - [Generate TwiML responses](#generatingTwiML) without writing any XML (I don't like XML).
  - [Conferences, Briding Calls, etc](#joinConference)
  - [Built-in pagination with ListIterator Object](#listIterator)
- - Access recordings, transcriptions, and notifications *(Support is limited at this time)*
 
 ## Todo
 
@@ -56,6 +55,7 @@ the next few months.
  - Better scalability with multiple Node instances
 	- An idea for this is to intercept incoming Twilio requests only if the message is for
 	that specific instance. Perhaps use URL namespacing or cookies for this?
+ - Access recordings, transcriptions, and notifications *(Support is limited at this time)*
 
 ## Basic Usage
 
@@ -326,16 +326,15 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 	//Now we can use the call Object to generate TwiML and listen for Call events
 	call.on('connected', function(status) {
 		//Put the call on hold
-		var confName = call.joinConference({'startConferenceOnEnter': true,
-			'endConferenceOnExit': true,
-			'waitUrl': '' //Disable hold music
-		});
-		call.say("This is probably never executed.");
+		call.putOnHoldWithoutMusic();
+		call.say("This is never executed.");
 		//Using an asyncronous function call
 		fs.readFile('greeting.txt', function(err, data) {
 			if(err) {
 				//Probably should terminate the call
-				call.liveHangUp();
+				call.liveCb(function() {
+					call.say("Sorry. An error occurred. Goodbye!");
+				});
 				throw err;
 			}
 			call.liveCb(function() {
@@ -416,12 +415,14 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 	`cb(call, status)`.  Please keep in mind that conferences do not start until at least two
 	participants join; in the meantime, the caller must wait. In addition, a conference does not end
 	until all callers drop out. This means that there are only a few ways to end a conference:
+	
 	- You press * and `leaveOnStar` is set.
 	- `timeLimit` expires.
 	- Someone leaves who had `endConferenceOnExit` set.
 	- You end the conference manually using one of the `Conference` Object methods.
 	
 	Options include:
+	
 	- `leaveOnStar` - lets the calling party leave the conference room if '*' is pressed on the caller's
 		keypad. Defaults to false.
 	- `timeLimit` - the maximum duration of the conference in seconds.  By default, there is a four hour
@@ -451,6 +452,22 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 	- You can use `Call.joinConference` to join a conference room.
 	- You can use `Application.makeCall` to call other participants and tell them all to join a
 		conference room.  This is the recommended way to bridge calls, for example.
+ - `Call.putOnHold([options])` - A special case of `Call.joinConference`.  The call is placed into a
+	random, empty conference room with the specified hold music. The conference room name is returned.
+	Options include:
+		- `timeLimit` - see `Call.joinConference()` above
+		- `beep` - whether a notification beep is played to the conference when a participant joins or
+		leaves the conference. Defaults to **false**. Note: this default is intentionally different from
+		`Call.joinConference`
+		- `waitUrl` - see `Call.joinConference()` above
+		- `waitMethod` - see `Call.joinConference()` above
+- `Call.putOnHoldWithoutMusic([options])` - A special case of `Call.joinConference`.  The call is placed into a
+	random, empty conference room with no hold music. The conference room name is returned.
+	Options include:
+		- `timeLimit` - see `Call.joinConference()` above
+		- `beep` - whether a notification beep is played to the conference when a participant joins or
+		leaves the conference. Defaults to **false**. Note: this default is intentionally different from
+		`Call.joinConference`
  - `Call.hangup()` - Ends a call. If used as the first verb in a TwiML response it does not prevent
 	Twilio from answering the call and billing your account.
  - `Call.redirect(url, method)` - Transfers control of a call to the TwiML at a different URL.

@@ -21,6 +21,7 @@ exports.getTwilioCredentials = function(t) {
 		var input = readline.createInterface(process.stdin, process.stdout, null);
 		input.question("Please enter your Twilio Account Sid: ", function(accountSid) {
 			input.question("Please enter your Twilio Auth Token: ", function(authToken) {
+				console.log("Please be certain that your Twilio Application is pointing to this server. The test suite server will listen on port 8002.");
 				input.question("Please enter a valid Twilio Application Sid for this account: ",
 					function(appSid) {
 					input.pause();
