@@ -200,7 +200,7 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 #### <a name="placingCalls"></a>Placing Calls
 
-- `app.makeCall(from, to, [options, onConnectCallback])` - Place a call and call the callback once the
+- `app.makeCall(from, to, [options, cb])` - Place a call and call the callback once the
 	party answers. **The callbacks will only be called if `app` is a registered application!**
 	If your application is registered, but your VoiceUrl is not set to the same server,
 	the callee will receive an error message and a debug error will be logged on your account.
@@ -227,7 +227,8 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 - timeout - The integer number of seconds that Twilio should allow the phone to ring before assuming
 	there is no answer. Default is 60 seconds, the maximum is 999 seconds.
 
-`cb` - Callback of the form `cb(err, call)`. This is called as soon as the call is placed.
+`cb` - Callback of the form `cb(err, call)`. This is called as soon as the call is queued, *not when
+	the call is connected*.
 	You can being building your TwiML response in the context of this callback, or you can listen for
 	the various events on the Call Object.
 
@@ -249,7 +250,8 @@ Phone numbers should be formatted with a '+' and country code e.g., +16175551212
 	the specified URL. Note: this is quite different from `Call.redirect`, which should be used when TwiML
 	is being served to Twilio.
 - `Call.liveCb(cb)` - Will use the `Call.liveRedirect` function to **immediately** re-route control to
-	the specified callback function, `cb`. The `cb` must be of the form `cb(err, call)`.
+	the specified callback function, `cb`. The `cb` must be of the form `cb(err, call)`. Please
+	ensure that the Call is associated with a registered application for this to work properly.
 
 #### <a name="generatingTwiML"></a>Generating TwiML
 
@@ -257,8 +259,8 @@ Generating TwiML is as simple as calling methods on the Call Object.  Let's look
 placing and handling an outbound call:
 
 ```javascript
-/* Make sure that you have already setup your Twilio client, loaded an application, and started
-	your server. Twilio must be able to contact your server for this to work. Ensure that your
+/* Make sure that you have already setup your Twilio client, loaded and registered a valid application,
+	and started your server. Twilio must be able to contact your server for this to work. Ensure that your
 	server is running, proper ports are open on your firewall, etc.
 */
 app.makeCall("+16145555555", "+16145558888", function(err, call) {
@@ -267,32 +269,32 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 	call.on('connected', function(status) {
 		/* This is called as soon as the call is connected to 16145558888 (when they answer)
 			Note: status is probably 'in-progress' at this point.
-			We can generate our TwiML here, as well.
+			Now we generate TwiML for this call... which will served up to Twilio when the
+			call is connected.
 		*/
+		call.say("Hello. This is a test of the Twilio API.");
+		call.pause();
+		var gather = call.gather(function(call, digits) {
+			call.say("You pressed " + digits + ".");
+			var str = "Congratulations! You just used Node Twilio API to place an outgoing call.";
+			call.say(str, {'voice': 'man', 'language': 'en'});
+			call.pause();
+			call.say(str, {'voice': 'man', 'language': 'en-gb'});
+			call.pause();
+			call.say(str, {'voice': 'woman', 'language': 'en'});
+			call.pause();
+			call.say(str, {'voice': 'woman', 'language': 'en-gb'});
+			call.pause();
+			call.say("Goodbye!");
+		}, {
+			'timeout': 10,
+			'numDigits': 1
+		});
+		gather.say("Please press any key to continue. You may press 1, 2, 3, 4, 5, 6, 7, 8, 9, or 0.");
+		call.say("I'm sorry. I did not hear your response. Goodbye!");
 	});
-	//Now we generate TwiML for this call... which will served up to Twilio when the call is connected
-	call.say("Hello. This is a test of the Twilio API.");
-	call.pause();
-	var input = call.gather(function(call, digits) {
-		call.say("You pressed " + digits + ".");
-		var str = "Congratulations! You just used Node Twilio API to place an outgoing call.";
-		call.say(str, {'voice': 'man', 'language': 'en'});
-		call.pause();
-		call.say(str, {'voice': 'man', 'language': 'en-gb'});
-		call.pause();
-		call.say(str, {'voice': 'woman', 'language': 'en'});
-		call.pause();
-		call.say(str, {'voice': 'woman', 'language': 'en-gb'});
-		call.pause();
-		call.say("Goodbye!");
-	}, {
-		'timeout': 10,
-		'numDigits': 1
-	});
-	input.say("Please press any key to continue. You may press 1, 2, 3, 4, 5, 6, 7, 8, 9, or 0.");
-	call.say("I'm sorry. I did not hear your response. Goodbye!");
 	call.on('ended', function(status, duration) {
-		/* This is called when the call ends.
+		/* This is called when the call ends and the StatusCallback is called.
 			Note: status is probably 'completed' at this point. */
 	});
 });
@@ -310,8 +312,11 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 		//Using an asyncronous function call -- INCORRECT: this will not work as expected!
 		fs.readFile('greeting.txt', function(err, data) {
 			if(err) throw err;
-			call.say(data);
+			call.say(data); //At this point, the 'connected' event handler has already been executed
 		});
+		/* At this point, no TwiML has been generated yet, and we must serve something to Twilio.
+			So, we serve an empty TwiML document.
+		*/
 	});
 });
 ```
@@ -319,6 +324,9 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 Notice that the 'connected' event completes before the file has been read. This means that Twilio
 has already requested and received the TwiML for the call. The call will be answered by Twilio
 and then immediately hung up (since no TwiML is provided).
+
+Note: The above code will work, but your generated TwiML will not be executed until another Call event
+is triggered.
 
 INSTEAD, DO THIS:
 
@@ -336,6 +344,7 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 				//Probably should terminate the call
 				call.liveCb(function() {
 					call.say("Sorry. An error occurred. Goodbye!");
+					//Call will hangup automatically since there is no more TwiML
 				});
 				throw err;
 			}
@@ -497,6 +506,9 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 
 #### <a name="callEvents"></a>Call Events
 
+The following Call events are only emitted if the Call is associated with a registered Application.
+See `app.register()` for more details.
+
 - Event: 'connected' `function(status) {}` - Emitted when the call connects. See the
 	[Twilio Documentation]
 	(http://www.twilio.com/docs/api/twiml/twilio_request#request-parameters-call-status)
@@ -512,7 +524,7 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 #### <a name="appEvents"></a>Application Events
 
 - Event: 'outgoingCall' `function(call) {}` - Triggered when Twilio connects an outgoing call
-	placed with `makeCall`.
+	placed with `app.makeCall()`.
 - <a name="incomingCallEvent"></a>Event: 'incomingCall' `function(call) {}` - Triggered when the
 	Twilio middleware receives a voice request from Twilio. Once you have the Call Object, you
 	can [generate a TwiML response](#generatingTwiML).
