@@ -549,8 +549,8 @@ The ListIterator Object has several properties and methods:
 
 ## Testing
 
-twilio-api uses nodeunit right now for testing. To test the package, run `npm test`
-in the root directory of the repository.
+twilio-api uses [nodeunit](https://github.com/caolan/nodeunit) right now for testing. To test the package,
+run `npm test` in the root directory of the repository.
 
 **BEWARE:** Running the test suite *may* actually place calls and cause you to incur fees on your Twilio
 account. Please look through the test suite before running it.
