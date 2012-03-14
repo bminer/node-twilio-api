@@ -180,8 +180,8 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 		requests from Twilio using the provided Connect middleware. These URLs should point to the same
 		server instance as the one running, and you should ensure that they do not interfere with
 		the namespace of your web application.
-		** CAUTION: It is highly recommended that you use 'POST' as the method for all requests;
-		otherwise, strange behavior may occur. **
+		**CAUTION: It is highly recommended that you use 'POST' as the method for all requests;
+		otherwise, strange behavior may occur.**
 - `Account.listApplications([filters,] cb)` - List applications associated with this Account.
 	`filters` may include a 'FriendlyName' property. Callback is of the form: `cb(err, li)`
 - `Application.load([cb])`
@@ -189,7 +189,9 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 - `Application.remove([cb])` - Permanently deletes this Application from Twilio, where callback
 	is `cb(err, success)` and `success` is a boolean.
 - `Application.register()` - Registers this application to intercept the appropriate HTTP requests
-	using the [Connect/Express middleware](#middleware).
+	using the [Connect/Express middleware](#middleware). The application must provide a VoiceUrl,
+	VoiceMethod, StatusCallback, StatusCallbackMethod, SmsUrl, SmsMethod, and SmsStatusCallback;
+	otherwise, an exception will be thrown.
 - `Application.unregister()` - Unregisters this application. This happens automatically if the
 	application is deleted.
 
