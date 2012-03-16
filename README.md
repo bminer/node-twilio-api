@@ -328,35 +328,10 @@ and then immediately hung up (since no TwiML is provided).
 Note: The above code will work, but your generated TwiML will not be executed until another Call event
 is triggered.
 
-INSTEAD, DO THIS:
+See the [Common Pitfalls](https://github.com/bminer/node-twilio-api/wiki/Common-Pitfalls)
+page on the wiki for futher details and solutions.
 
-```javascript
-app.makeCall("+16145555555", "+16145558888", function(err, call) {
-	if(err) throw err;
-	//Now we can use the call Object to generate TwiML and listen for Call events
-	call.on('connected', function(status) {
-		//Put the call on hold
-		call.putOnHoldWithoutMusic();
-		call.say("This is never executed.");
-		//Using an asyncronous function call
-		fs.readFile('greeting.txt', function(err, data) {
-			if(err) {
-				//Probably should terminate the call
-				call.liveCb(function() {
-					call.say("Sorry. An error occurred. Goodbye!");
-					//Call will hangup automatically since there is no more TwiML
-				});
-				throw err;
-			}
-			call.liveCb(function() {
-				call.say(data);
-			});
-		});
-	});
-});
-```
-
-#### Here are all of the TwiML commands you can use:
+#### Here are all of the TwiML-generating functions you can call:
 
  - `Call.say(text[, options])` - Reads `text` to the caller using text to speech. Options include:
 	- `voice` - 'man' or 'woman' (default: 'man')
@@ -509,13 +484,21 @@ app.makeCall("+16145555555", "+16145558888", function(err, call) {
 The following Call events are only emitted if the Call is associated with a registered Application.
 See `app.register()` for more details.
 
-- Event: 'connected' `function(status) {}` - Emitted when the call connects. See the
+- Event: 'connected' `function(status) {}` - Emitted when the call connects. For outbound calls,
+	this event is only emitted when the callee answers the call. Use the 'ended' event below to
+	determine why a call was not answered. For further information, refer to the
 	[Twilio Documentation]
 	(http://www.twilio.com/docs/api/twiml/twilio_request#request-parameters-call-status)
 	for possible call status values.
 	*EDIT:* I think the only possible call status value is 'in-progress'. See issue #3.
-- Event: 'ended' `function(status, callDuration) {}` - Emitted when the call ends. See the
-	[Twilio Documentation]
+	
+	Note: As described above, one must take care when using asynchronous function calls
+	within the 'connected' event handler, as the callbacks for these async calls will be
+	executed *after* the TwiML has already been submitted to Twilio. See [Common Pitfalls]
+	(https://github.com/bminer/node-twilio-api/wiki/Common-Pitfalls) for details.
+- Event: 'ended' `function(status, callDuration) {}` - Emitted when the call ends for whatever
+	reason. For outbound calls, one can use this event to see why the call never connected
+	(i.e. the person did not answer, the line was busy, etc.) See the [Twilio Documentation]
 	(http://www.twilio.com/docs/api/twiml/twilio_request#request-parameters-call-status)
 	for possible call status values.
 	*EDIT:* I believe the only possible call status values are: `['completed', 'busy',
@@ -524,10 +507,10 @@ See `app.register()` for more details.
 #### <a name="appEvents"></a>Application Events
 
 - Event: 'outgoingCall' `function(call) {}` - Triggered when Twilio connects an outgoing call
-	placed with `app.makeCall()`.
+	placed with `app.makeCall()`. It is not common to listen for this event.
 - <a name="incomingCallEvent"></a>Event: 'incomingCall' `function(call) {}` - Triggered when the
 	Twilio middleware receives a voice request from Twilio. Once you have the Call Object, you
-	can [generate a TwiML response](#generatingTwiML).
+	can [generate a TwiML response](#generatingTwiML) or listen for Call events.
 
 #### <a name="listIterator"></a>ListIterator
 
