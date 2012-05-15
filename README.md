@@ -41,6 +41,9 @@ the next few months.
  - [List calls and modify live calls](#listAndModifyCalls)
  - [Generate TwiML responses](#generatingTwiML) without writing any XML (I don't like XML).
  - [Conferences, Briding Calls, etc](#joinConference)
+ - [Send SMS Messages](#send-sms-messages)
+ - [Receive SMS Messages](#incomingSMSMessageEvent)
+ - [List and Manage SMS Messages](#list-and-manage-sms-messages)
  - [Built-in pagination with ListIterator Object](#listIterator)
 
 ## Todo
@@ -174,7 +177,7 @@ for what filters you can apply. `cb(err, li)` where `li` is a ListIterator.
 - `Account.getApplication(Sid, cb)` - Get an Application by Sid. The Application Object is passed to
 	the callback `cb(err, app)`
 - `Account.createApplication(voiceUrl, voiceMethod, statusCb, statusCbMethod,
-	smsUrl, smsMethod, SmsStatusCb, [friendlyName], cb)` - Creates an Application with
+	smsUrl, smsMethod, smsStatusCb, [friendlyName], cb)` - Creates an Application with
 		`friendlyName`, where callback is `cb(err, app)`
 		The `VoiceUrl`, `voiceMethod` and other required arguments are used to intercept incoming
 		requests from Twilio using the provided Connect middleware. These URLs should point to the same
@@ -200,12 +203,11 @@ SmsUrl, SmsMethod, and SmsStatusCallback.  Fallback URLs are ignored at this tim
 
 #### <a name="placingCalls"></a>Placing Calls
 
-- `app.makeCall(from, to, [options, cb])` - Place a call and call the callback once the
-	party answers. **The callbacks will only be called if `app` is a registered application!**
-	If your application is registered, but your VoiceUrl is not set to the same server,
-	the callee will receive an error message and a debug error will be logged on your account.
-	For example, if your server is running at www.example.com, please ensure that your VoiceUrl is
-	something like: http://www.example.com/twilio/voice
+- `Application.makeCall(from, to, [options, cb])` - Place a call and call the callback once the
+	call is queued. If your application is registered, but your VoiceUrl is not set to the same
+	server, the callee will likely receive an error message, and a debug error will be logged on
+	your account. For example, if your server is running at www.example.com, please ensure that
+	your VoiceUrl is something like: http://www.example.com/twilio/voice
 	Also, be sure that your VoiceUrl protocol matches your protocol (HTTP vs. HTTPS).
 	
 `from` is the phone number or client identifier to use as the caller id. If using a phone number,
@@ -255,8 +257,10 @@ Phone numbers should be formatted with a '+' and country code e.g., +16175551212
 
 #### <a name="generatingTwiML"></a>Generating TwiML
 
-Generating TwiML is as simple as calling methods on the Call Object.  Let's look at an example of
-placing and handling an outbound call:
+Generating TwiML is as simple as calling methods on the Call Object.  To make things simple, you
+cannot generate TwiML for SMS requests, only voice requests.
+
+Let's look at an example of placing and handling an outbound call:
 
 ```javascript
 /* Make sure that you have already setup your Twilio client, loaded and registered a valid application,
@@ -391,7 +395,8 @@ page on the wiki for futher details and solutions.
 		later because a transcribeCallback does not affect the call flow.
 	- `playBeep` - play a sound before the start of a recording. If you set the value
 		to 'false', no beep sound will be played. Defaults to true.
- - `Call.sms(...)` - Not yet implemented
+ - `Call.sms` - Not implemented, and probably will never be implemented. You can use
+	`Application.sendSMS` to send SMS messages.
 <a name="joinConference"></a>
  - `Call.joinConference([roomName, option, cbOnEnd])` - connects the call to a conference room. If
 	`roomName` is not specified, the caller will be placed into a uniquely named, empty conference room.
@@ -506,11 +511,66 @@ See `app.register()` for more details.
 
 #### <a name="appEvents"></a>Application Events
 
-- Event: 'outgoingCall' `function(call) {}` - Triggered when Twilio connects an outgoing call
-	placed with `app.makeCall()`. It is not common to listen for this event.
-- <a name="incomingCallEvent"></a>Event: 'incomingCall' `function(call) {}` - Triggered when the
+- Event: 'outgoingCall' `function(call) {}` - Emitted when Twilio connects an outgoing call
+	placed with `Application.makeCall()`. It is not common to listen for this event.
+- <a name="incomingCallEvent"></a>Event: 'incomingCall' `function(call) {}` - Emitted when the
 	Twilio middleware receives a voice request from Twilio. Once you have the Call Object, you
 	can [generate a TwiML response](#generatingTwiML) or listen for Call events.
+- Event: 'outgoingSMSMessage' `function(smsMessage) {}` - Emitted when Twilio sends an outgoing
+	SMS message sent with `Application.sendSMS()`. It is not common to listen for this event.
+- <a name="incomingSMSMessageEvent"></a>Event: 'incomingSMSMessage' `function(smsMessage) {}` -
+	Emitted when the Twilio middleware receives a SMS message request from Twilio.
+
+#### Send SMS Messages
+
+- `Application.sendSMS(from, to, body [, cb])` - Send a SMS Message to a SMS-enabled phone.
+	If your application is registered, but your SmsStatusCallbackUrl is not set to the same server,
+	the SMSMessage Object will not emit the 'sendStatus' event. For example, if your server
+	is running at www.example.com, please ensure that your
+	SmsStatusCallbackUrl is something like: http://www.example.com/twilio/smsStatus
+	Also, be sure that your SmsStatusCallbackUrl protocol matches your protocol (HTTP vs. HTTPS).
+	
+`from` - A Twilio phone number enabled for SMS. Only phone numbers or short codes purchased from
+	Twilio work here.
+
+`to` - the destination phone number.
+
+`body` - the body of the message you want to send, limited to 160 characters.
+
+`cb` - Callback of the form `cb(err, smsMessage)`. This is called as soon as the message is
+	queued to be sent, *not when the message is actually sent/delivered*. To check the message's
+	send status, you can listen for the 'sendStatus' event on the SMSMessage Object.
+
+Phone numbers should be formatted with a '+' and country code e.g., +16175551212 (E.164 format).
+
+#### List and Manage SMS Messages
+
+- `Application.listSMSMessages([filters,] cb)` - Lists inbound and outbound SMS Messages associated
+	with an Account. Note: you must call Application.listSMSMessages, not Account.listSMSMessages.
+	This is a side-effect caused by the Application and SMS Message being very inter-related.
+	Refer to the [Twilio Documentation](http://www.twilio.com/docs/api/rest/sms#list-get) to see
+	what `filters` you can use. Callback is of the form: `cb(err, li)`.
+- `SMSMessage.load([cb])`
+- `SMSMessage.reply(body [, cb])` - Calls `Application.sendSMS(this.To, this.From, body, cb)`
+	internally. This method will not work from outbound SMS Messages.
+- Useful SMS Properties include:
+	- From - The phone number that sent this message
+	- To - The phone number of the recipient
+	- Body - The text body of the SMS message. Up to 160 characters long
+	- Status - The status of this SMS message. Either queued, sending, sent, or failed.
+	- Direction - The direction of this SMS message. 'incoming' for incoming messages,
+		'outbound-api' for messages initiated via the REST API, 'outbound-call' for messages
+		initiated during a call or 'outbound-reply' for messages initiated in response to an
+		incoming SMS. At this time, node-twilio-api does not support 'outbound-call' or
+		'outbound-reply'; all outbound SMS messages are marked 'outbound-api'.
+	- Dates (i.e. DateCreated, DateSent)
+	- Geographic information (i.e. FromCity, FromState, ..., ToZip, ToCountry)
+	- Any others: http://www.twilio.com/docs/api/twiml/sms/twilio_request#synchronous
+
+#### SMS Message Events
+
+- Event: 'sendStatus' `function(success, status) {}` - Emitted when an outbound SMS message has been
+	processed.  Success is either true or false; status is either "sent" or "failed".
 
 #### <a name="listIterator"></a>ListIterator
 
