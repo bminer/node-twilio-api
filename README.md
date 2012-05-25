@@ -52,8 +52,7 @@ the next few months.
  - List and provision incoming phone numbers
  - Support for Twilio Connect Applications
  - List and manage conferences, conference details, and participants
- - Send/receive SMS messages
-	 - List SMS short codes and details
+ - List SMS short codes and details
  - Respond to fallback URLs
  - Better scalability with multiple Node instances
 	- An idea for this is to intercept incoming Twilio requests only if the message is for
