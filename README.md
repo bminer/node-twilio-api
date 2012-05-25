@@ -25,9 +25,6 @@ people using it, testing it, and submitting issues through GitHub.  Thanks!
 
 ## Features and Library Overview
 
-Only voice calls are supported at this time, but I plan to implement the entire Twilio API over
-the next few months.
-
  - [Create Twilio client](#createClient)
  - [Manage accounts and subaccounts](#manageAccts)
  - [List available local and toll-free numbers](#listNumbers)
