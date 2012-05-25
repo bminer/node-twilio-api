@@ -20,6 +20,6 @@
   	"nodeunit": ">=0.6.4"
   },
   "optionalDependencies": {
-  	"express": ">=2.5.0 && <3.0"
+  	"express": ">=3.0"
   }
 }

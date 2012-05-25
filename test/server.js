@@ -3,6 +3,7 @@ var twilio = require('../lib'),
 	client,
 	express = require('express'),
 	app = express.createServer(),
+	http,
 	tapp;
 
 exports.getTwilioCredentials = basicTest.getTwilioCredentials;
@@ -24,7 +25,7 @@ exports.setupExpressMiddleware = function(t) {
 		'showMessage': true,
 		'dumpExceptions': true
 	}) );
-	app.listen(8002);
+	http = app.listen(8002);
 	t.done();
 }
 
@@ -182,6 +183,6 @@ exports.makeCall = function(t) {
 }
 
 exports.stopServer = function(t) {
-	app.close();
+	http.close();
 	t.done();
 }
