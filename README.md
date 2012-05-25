@@ -10,11 +10,6 @@ Also ships with Connect/Express middleware to handle incoming Twilio requests.
 **IMPORTANT**: You will need a Twilio account to get started (it's not free). [Click here to sign up for 
 an account](https://www.twilio.com/try-twilio)
 
-#### Migrating to version 0.2.0
-
-- Call.liveCb(cb) has been changed such that the `cb` is now of the form: `cb(err, call)` instead of
-	`cb(call)`.
-
 ## Install
 
 Project Status: Beta - Not recommended for use in production environments just yet, but please test!
@@ -22,7 +17,8 @@ Project Status: Beta - Not recommended for use in production environments just y
 `npm install twilio-api`
 
 This project is in an **beta** stage. Placing and receiving calls work rather well.
-Call recording and conferences have not yet been thoroughly tested.
+You can also send/receive SMS messages. For anything else, see the docs below to see if your
+feature is supported.
 
 While I do not believe that this API is ready for a production environment, I would love to get some
 people using it, testing it, and submitting issues through GitHub.  Thanks!
