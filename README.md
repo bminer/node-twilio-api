@@ -12,16 +12,13 @@ an account](https://www.twilio.com/try-twilio)
 
 ## Install
 
-Project Status: Beta - Not recommended for use in production environments just yet, but please test!
+Project Status: Stable
 
 `npm install twilio-api`
 
-This project is in an **beta** stage. Placing and receiving calls work rather well.
+This project is rather stable. Both placing and receiving calls works rather well.
 You can also send/receive SMS messages. For anything else, see the docs below to see if your
 feature is supported.
-
-While I do not believe that this API is ready for a production environment, I would love to get some
-people using it, testing it, and submitting issues through GitHub.  Thanks!
 
 ## Features and Library Overview
 
