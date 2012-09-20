@@ -140,7 +140,7 @@ Oh, yes.  The middleware also uses your Twilio AuthToken to validate incoming re
 running behind an HTTPS proxy, be sure that `req.protocol` contains the appropriate protocol. If
 using Express 3.0, set the "trust proxy" option to ensure that `req.protocol` is populated with
 the value in the `X-Forwarded-Proto` header.  For more information, checkout the
-[`req.protocol` option](http://expressjs.com/api.html#req.protocol).
+[`req.protocol` property](http://expressjs.com/api.html#req.protocol).
 
 #### <a name="manageAccts"></a>Manage accounts and subaccounts
 
