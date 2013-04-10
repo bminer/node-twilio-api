@@ -3,7 +3,7 @@
   "contributors": [ "Jacob Williams <jacob@iakob.com> (http://iakob.com/)" ],
   "name": "twilio-api",
   "description": "Add voice and SMS messaging capabilities to your Node.JS applications with node-twilio-api - a  high-level Twilio helper library to make Twilio API requests, handle incoming requests, and generate TwiML",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "homepage": "https://github.com/bminer/node-twilio-api/",
   "repository": {
     "type": "git",
